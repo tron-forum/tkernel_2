@@ -1,0 +1,73 @@
+#
+# ----------------------------------------------------------------------
+#     T-Kernel 2.0 Software Package
+#
+#     Copyright 2011 by Ken Sakamura.
+#     This software is distributed under the latest version of T-License 2.x.
+# ----------------------------------------------------------------------
+#
+#     Released by T-Engine Forum(http://www.t-engine.org/) at 2011/05/17.
+#     Modified by T-Engine Forum at 2013/03/02.
+#     Modified by TRON Forum(http://www.tron.org/) at 2015/06/01.
+#
+# ----------------------------------------------------------------------
+#
+
+#
+#	Makefile for gmake
+#	sysinit (common description)
+#
+
+# source file dependencies (generated automatically)
+DEPS = Dependencies
+DEPENDENCIES_OUTPUT := $(DEPS)
+
+# ----------------------------------------------------------------------------
+
+# target object
+TARGET	= sysinit.o
+
+S	= ../../src
+
+# common source files
+SRC	+= sysinit_main.c sysstartup.c gdevcnf.c gsyscnf.c \
+	patch.c inittask_def.c
+VPATH	+= $(S)
+HEADER	+= $(S)
+
+# additional source files (cpu dependent)
+VPATH	+= ../../../sysdepend/cpu/$(MACHINE)
+HEADER	+= ../../../sysdepend/cpu/$(MACHINE)
+
+# additional source files (device dependent)
+VPATH	+= ../../../sysdepend/device/$(TETYPE)_$(MACHINE)
+HEADER	+= ../../../sysdepend/device/$(TETYPE)_$(MACHINE)
+
+# additional source files (inittask_dev.c)
+VPATH	+= ../../../sysmain/src
+
+# header file path (kernel settings)
+HEADER  += ../../../tkernel/src
+
+OBJ	= $(addsuffix .o, $(basename $(SRC)))
+
+# compiler options
+CFLAGS	+= $(CFLAGS_WARNING)
+
+# ----------------------------------------------------------------------------
+
+.PHONY: all clean
+
+ALL = $(TARGET) $(CRT0)
+
+all: $(ALL)
+
+$(TARGET): $(OBJ)
+	$(LINK_R.o) $^ $(OUTPUT_OPTION)
+
+clean:
+	$(RM) $(OBJ) $(ALL) $(DEPS)
+
+# generate dependencies
+$(DEPS): ; touch $(DEPS)
+-include $(DEPS)

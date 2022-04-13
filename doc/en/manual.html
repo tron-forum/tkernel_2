@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h1 id="t-Kernel-2.0-source-code-manual">T-Kernel 2.0 Source code Manual</h1>
+<hr />
+<h3 id="Update-history">&lt; Update history &gt;</h3>
+<ul>
+<li><a href="Ver2.02.00.txt">Ver 2.02.00</a></li>
+<li><a href="Ver2.01.03.txt">Ver 2.01.03</a></li>
+<li><a href="Ver2.01.02.txt">Ver 2.01.02</a></li>
+<li><a href="Ver2.01.01.txt">Ver 2.01.01</a></li>
+<li><a href="Ver2.01.00.txt">Ver 2.01.00</a></li>
+<li><a href="Ver2.00.01.txt">Ver 2.00.01</a></li>
+</ul>
+<h2 id="introduction">1. Introduction</h2>
+<p>This software is the source code of T-Kernel 2.0.</p>
+<p>It contains the T-Kernel 2.0 kernel and the source code of the software that depends on the target board(tef_em1d).</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>T-Kernel 2.0 Kernel</strong></p>
+<p>This is the T-Kernel 2.0 kernel. This includes the T-Kernel/OS, T-Kernel/SM, and T-Kernel/DS. The source code is separated by directory into target-independent common code and target-dependent model-specific code to simplify porting to other targets.</p></li>
+<li><p><strong>T-Monitor</strong></p>
+<p>This performs system startup and initialization and processes interrupts and exceptions. It also includes debug support functions. Basically, it is completely target-dependent.</p></li>
+<li><p><strong>Device Drivers</strong></p>
+<p>These device drivers comply with the T-Kernel standard specifications for the following primary devices equipped on the target. Basically, it is completely target-dependent.</p>
+<ul>
+<li>Clock (RTC)</li>
+<li>Serial console</li>
+<li>Touch panel and press button switch</li>
+<li>LCD</li>
+<li>System disk (micro SD use)</li>
+</ul></li>
+</ul></ol>
+<h2 id="Source-code-configuration-and-startup-process">2. Source code configuration and startup process</h2>
+<p>This section describes the T-Kernel 2.0 source code configuration and startup process.</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li>2-1. <a href="tkernel-source.html">T-Kernel 2.0 source configuration</a></li>
+<li>2-2. <a href="tmonitor-source.html">T-Monitor (tef_em1d use) source configuration</a></li>
+<li>2-3. <a href="driver-source.html">Device driver (tef_em1d use) source configuration</a></li>
+<li>2-4. <a href="tkernel-startup.html">T-Kernel 2.0 startup processing</a></li>
+</ol>
+<h2 id="t-kernel-2.0-implementation-specifications">3. T-Kernel 2.0 Implementation Specifications</h2>
+<p>This section describes the implementation-dependent part of the target "T-Engine Reference Board (tef_em1d)".</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li>3-1. <a href="impl-tef_em1d.txt">T-Kernel 2.0 (tef_em1d) Implementation Specifications</a></li>
+</ol>
+<h2 id="development-method">4. Development method</h2>
+<p>For information on how to develop T-Kernel 2.0 software, refer to <a href="https://www.tron.org/download/index.php?route=product/product&path=37_38&product_id=133">T-Kernel 2.02.00 Software Package</a> published on the T-Kernel Forum web page. This package contains each software required for development and its description. However, please note that the development environment is as of the time of publication.</p>
+</body>
+</html>

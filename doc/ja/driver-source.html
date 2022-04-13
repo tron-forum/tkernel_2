@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h2 id="デバイスドライバ-tef_em1d-用-ソース構成">デバイスドライバ (tef_em1d 用) ソース構成</h2>
+<hr />
+<ul>
+<li><a href="#はじめに">1. はじめに</a></li>
+<li><a href="#ディレクトリ構成">2. ディレクトリ構成</a></li>
+<li><a href="#clk-ディレクトリ">3. clk ディレクトリ</a></li>
+<li><a href="#console-ディレクトリ">4. console ディレクトリ</a></li>
+<li><a href="#kbpd-ディレクトリ">5. kpbd ディレクトリ</a></li>
+<li><a href="#lowkbpd-ディレクトリ">6. lowkbpd ディレクトリ</a></li>
+<li><a href="#screen-ディレクトリ">7. screen ディレクトリ</a></li>
+<li><a href="#sysdsk-ディレクトリ">8. sysdsk ディレクトリ</a></li>
+<li><a href="#build-ディレクトリ">9. build ディレクトリ</a></li>
+</ul>
+<hr />
+<h3 id="はじめに">1. はじめに</h3>
+<p>ここでは、T-Engine リファレンスボード (tef_em1d) 用の以下のデバイスドライバのソースコードの構成に関して説明します。</p>
+<ul>
+<li>時計ドライバ</li>
+<li>コンソールドライバ</li>
+<li>KB/PD ドライバ</li>
+<li>スクリーンドライバ</li>
+<li>システムディスクドライバ</li>
+</ul>
+<p>各デバイスドライバの機能仕様に関しては、<a href="http://www.tron.org/ja/">トロンフォーラム</a> から公開されている「T-Engine 標準デバイスドライバ仕様」を、実装に依存する部分に関しては、 <a href="impl-tef_em1d.txt">「T-Kernel 2.0(tef_em1d)実装仕様書」</a> を参照してください。</p>
+<h3 id="ディレクトリ構成">2. ディレクトリ構成</h3>
+<p>デバイスドライバのソースコードは、T-Kernel ソースコードパッケージの中に含まれています。</p>
+<p>デバイスドライバのソース全体のディレクトリ構成図を以下に示します。</p>
+<ul>
+<li><p>T-Kernel ソースディレクトリの &quot;lib&quot;, &quot;include&quot;, &quot;etc&quot; は、デバイスドライバの構築のために使用します。</p></li>
+<li><p>デバイスドライバは、基本的に実行対象とするハードウェアごとに異なるため T-Kernel のディレクトリ構成の基本ルールとは異なり、&quot;<機種名>&quot; ディレクトリを上位に配置しています。</p></li>
+<li><p><機種名> は &quot;tef_em1d&quot; となります。</p></li>
+</ul>
+<!-- dummy comment line for breaking list -->
+
+<pre><code>  tkernel_source
+    |
+    |-- ...               ( T-Kernel ソースディレクトリ )
+    |-- lib                     ライブラリ
+    |-- include                 定義ファイル (ヘッダファイル)
+    |   `-- device                 デバイスドライバ定義ファイル
+    |-- etc                     make ルール、各種スクリプト
+    |
+    |-- driver           デバイスドライバソースディレクトリ
+       `-- &lt;機種名&gt;
+           |
+           |-- clk              時計ドライバ
+           |   |-- build
+           |   `-- src
+           |       `-- svc          拡張 SVC インタフェース用
+           |
+           |-- console          コンソールドライバ
+           |   |-- build
+           |   `-- src
+           |       `-- svc          拡張 SVC インタフェース用
+           |
+           |-- kbpd             KB/PD ドライバ
+           |   |-- build
+           |   `-- src
+           |
+           |-- lowkbpd          KB/PD - 実I/Oドライバ
+           |   |-- build
+           |   `-- src
+           |
+           |-- screen          スクリーンドライバ
+           |   |-- build
+           |   `-- src
+           |
+           |-- sysdsk          システムディスクドライバ
+           |   |-- build
+           |   |-- obj            MMC 用オブジェクトファイル
+           |   `-- src
+           |
+           `-- build           全体構築ディレクトリ</code></pre>
+<h3 id="clk-ディレクトリ">3. clk ディレクトリ</h3>
+<p>T-Engine リファレンスボード上の RTC に対応した時計ドライバのソースです。</p>
+<p>RTC のアクセスで必要になるシリアルインタフェース (I2C，SPI) は、他のデバイスドライバでも使用するため、サブシステムとして分離して実装し、拡張 SVC でアクセスするようにしています。そのため、拡張 SVC のインタフェースライブラリが必要になります。</p>
+<p>構築ディレクトリで make を実行すると、ドライバのオブジェクトファイルと、拡張 SVC のインタフェースライブラリの両方が構築されます。インタフェースライブラリのソース、および定義ファイルは&quot;src/svc&quot; サブディレクトリに置かれますが、存在しない場合は、&quot;perl&quot; スクリプトにより自動的に生成されます。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;driver/<機種名>/build&quot; ディレクトリにコピーされ、インタフェースライブラリ (libem1diic.a) は、&quot;tkernel_source/lib/build/<機種名>&quot; ディレクトリにコピーされます。</p>
+<h3 id="console-ディレクトリ">4. console ディレクトリ</h3>
+<p>T-Engine リファレンスボード上のシリアルポートに対応したコンソールドライバのソースです。</p>
+<p>コンソールドライバは、サブシステムとして実装され、拡張 SVC でアクセスされますので、拡張 SVC のインタフェースライブラリが必要になります。</p>
+<p>構築ディレクトリで make を実行すると、ドライバのオブジェクトファイルと、拡張 SVC のインタフェースライブラリの両方が構築されます。インタフェースライブラリのソース、および定義ファイルは &quot;src/svc&quot; サブディレクトリに置かれますが、存在しない場合は、&quot;perl&quot; スクリプトにより自動的に生成されます。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;driver/<機種名>/build&quot; ディレクトリにコピーされ、インタフェースライブラリ (libconsolesvc.a) は、&quot;tkernel_source/lib/build/<機種名>&quot; ディレクトリにコピーされます。</p>
+<h3 id="kbpd-ディレクトリ">5. kbpd ディレクトリ</h3>
+<p>一般的なキーボードとポインティングデバイス(マウス)に対応した KB/PD ドライバのソースです。 本ドライバでは、実際のデバイスに依存しない論理的な処理のみを行い、実際のデバイスに対応した処理は実 I/O ドライバ (lowkbpd)で行います。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;driver/<機種名>/build&quot; ディレクトリにコピーされます。</p>
+<h3 id="lowkbpd-ディレクトリ">6. lowkbpd ディレクトリ</h3>
+<p>T-Engine リファレンスボードに接続されるタッチパネル、およびボード上のボタンスイッチに対応した実I/O ドライバのソースです。</p>
+<p>タッチパネルをポインティングデバイスとみなして、ボタンスイッチをキーボードのキーとみなして処理します。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;driver/<機種名>/build&quot; ディレクトリにコピーされます。</p>
+<h3 id="screen-ディレクトリ">7. screen ディレクトリ</h3>
+<p>T-Engine リファレンスボードに接続される LCD に対応したスクリーンドライバのソースです。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;driver/<機種名>/build&quot; ディレクトリにコピーされます。</p>
+<h3 id="sysdsk-ディレクトリ">8. sysdsk ディレクトリ</h3>
+<p>T-Engineリファレンスボード上のマイクロ SD カードスロットに対応したシステムディスクドライバのソースです。</p>
+<p>ただし、マイクロ SD カード(MMC)アクセス用関数のソースファイルは含まれていません。&quot;obj&quot; サブディレクトリにオブジェクトファイルが置かれています。</p>
+<p>マイクロ SD カード(SD, SDHC) にのみ対応し、他のディスクメディアには対応していません。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;driver/<機種名>/build&quot; ディレクトリにコピーされます。</p>
+<h3 id="build-ディレクトリ">9. build ディレクトリ</h3>
+<p>すべてのデバイスドライバを一括して構築する構築ディレクトリです。構築した各デバイスドライバのオブジェクトファイルは、本ディレクトリに置かれ、その際、古いオブジェクトファイルは、&quot;!OLD&quot; の名称のサブディレクトリにバックアップされます。</p>
+<p>本ディレクトリに置かれた各デバイスドライバのオブジェクトファイルは、T-Kernel の実行イメージ構築の際に使用されます。</p>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h2 id="T-Kernel-2.0-Source-Configuration">T-Kernel 2.0 Source Configuration</h2>
+<hr />
+<ul>
+<li><a href="#Introduction">1. Introduction</a></li>
+<li><a href="#Directory-Configuration">2. Directory Configuration</a></li>
+<li><a href="#kernel-Directory">3. kernel Directory</a></li>
+<li><a href="#lib-Directory">4. lib Directory</a></li>
+<li><a href="#include-Directory">5. include Directory</a></li>
+<li><a href="#config-Directory">6. config Directory</a></li>
+<li><a href="#etc-Directory">7. etc Directory</a></li>
+<li><a href="#bin-Directory">8. bin Directory</a></li>
+<li><a href="#Resources-Used-by-T-Kernel">9. Resources Used by T-Kernel</a></li>
+</ul>
+<hr />
+<h3 id="Introduction">1. Introduction</h3>
+<p>This document explains the T-Kernel 2.0 source code configuration.</p>
+<p>For more information about the T-Kernel 2.0 functional specifications, please refer to the &quot;T-Kernel 2.0 Specifications&quot; released by <a href="http://www.tron.org/">TRON Forum</a>, and <a href="impl-tef_em1d.txt">&quot;T-Kernel 2.0 (tef_em1d) Implementation Specification&quot;</a> for implementation dependencies.</p>
+<p>The basic rules and terminology for the T-Kernel directory configuration are as follows.</p>
+<ul>
+<li><p><strong>Model Name</strong></p>
+<p>The hardware that T-Kernel runs on is described using the following &lt;Model Name&gt; format.</p>
+<pre><code>&lt;Model Name&gt;: &lt;Board Name&gt;_&lt;CPU Name&gt;
+              &lt;Board Name&gt; : Abbreviated name of the board type 
+              &lt;CPU Name&gt;   : Abbreviated name of the CPU type</code></pre>
+<p>The &lt;Model Name&gt; supported by this package is as follows.</p>
+<pre><code>ted_em1d :
+        &lt;Board Name&gt; : tef  - T-Engine Reference Board
+        &lt;CPU Name&gt;   : em1d - EMMA Mobile 1-D (ARM11 core)</code></pre>
+<p>Using the &lt;Model Name&gt; and the &lt;CPU Name&gt; as the subdirectory name enables support for multiple hardware platforms within one directory tree.</p></li>
+<li><p><strong>Source directory</strong></p>
+<p>This is the directory where source files are placed. As a general rule, it is named &quot;src&quot;.</p></li>
+<li><p><strong>Build directory</strong></p>
+<p>This is the directory where the object files for each model are built. As a general rule, it is named &quot;build/&lt;Model Name&gt;&quot;.</p>
+<p>Run &quot;make&quot; in the build directory to build the object files.</p>
+<p>&quot;make&quot; has the following targets, but you can create the build using only &quot;make&quot;.</p>
+<pre><code>    make                The same as &quot;make all&quot;
+    make all            Typical &quot;make&quot;
+    make install        Copy the result to a predetermined directory
+    make clean          Delete the result and initialize
+    make source         Automatically generate the SVC/Extended SVC I/F source
+    make clean_source   Delete the source generated with make source
+    make clean_all      make clean + make clean_source</code></pre>
+<p>The build directory contains the Makefile and the build result object file needed to run make.</p>
+<p>In a typical Makefile the common portions that are not dependent on the model are separated into Makefile.common and use an include. Makefile.common is placed in the source directory (&quot;src/Makefile.common&quot;) or directly below the build directory (&quot;build/Makefile.common&quot;).</p></li>
+<li><p><strong>Hardware dependent portion</strong></p>
+<p>This directory contains portions which are dependent on the target hardware and is named &quot;sysdepend/&lt;Model Name&gt;&quot; or &quot;sysdepend/&lt;CPU Name&gt;&quot;. The latter is only used when it is CPU dependent.</p>
+<p>Clearly separating the hardware dependent portions into a separate directory limits the necessary source confirmation/modification work when porting to new hardware, and it makes porting easier.</p></li>
+<li><p><strong>Application dependent portion</strong></p>
+<p>This is the portion which must be changed when actually developing applications and embedding them into products.</p>
+<p>The application dependent portion must be created for each product, so a sample is provided in this package.</p></li>
+<li><p><strong>Kernel core</strong></p>
+<p>This provides the basic T-Kernel functionality which does not depend on the hardware or application.</p>
+<p>The kernel core does not need to be changed as long as you do not modify the T-Kernel functions.</p></li>
+</ul>
+<h3 id="Directory-Configuration">2. Directory Configuration</h3>
+<p>The directory configuration diagram for the entire T-Kernel source is described below.</p>
+<ul>
+<li><p>The &lt;Model Name&gt; in this package is &quot;tef_em1d&quot;, and the &lt;CPU Name&gt; is &quot;em1d&quot;.</p></li>
+<li><p>If it does not say that it is a &quot;Hardware dependent portion&quot; or an &quot;Application dependent portion&quot; then it is part of the kernel core.</p></li>
+<li><p>Some directories contain files with the name &quot;_dmy&quot;. These are dummy files that are included for the archiver to avoid having empty directories and are not needed after extraction.</p></li>
+</ul>
+<p><!-- dummy comment line for breaking list --></p>
+<pre><code>  tkernel_source
+    |
+    |-- kernel               T-Kernel main part
+    |     |-- sysinit               System initialization
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- tkernel               T-Kernel/OS
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- sysmgr                T-Kernel/SM
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- sysmain               System main
+    |     |   |-- src                     [Application dependent portion]
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- sysdepend             [Hardware dependent portion]
+    |     |   |-- cpu                     CPU dependent portion
+    |     |   |   `-- &lt;CPU Name&gt;
+    |     |   `-- device                  Device dependent portion
+    |     |       `-- &lt;Model Name&gt;
+    |     `-- extension             Extension related portion
+    |         |-- memory                  Memory management
+    |         |   `--nommu                     No MMU
+    |         `-- startup                 Extension startup/shutdown process
+    |             `--noext                     No Extension
+    |
+    |
+    |-- lib                  Library
+    |     |-- build                 Object (build) directory
+    |     |   `-- &lt;Model Name&gt;
+    |     |-- crt                   Start-up routine
+    |     |   |-- crt0                    Common start-up routine
+    |     |   |   |-- src
+    |     |   |   |   `-- sysdepend             [Hardware dependent portion]
+    |     |   |   |       `-- &lt;Model Name&gt;
+    |     |   |   `-- build
+    |     |   |       `-- &lt;Model Name&gt;
+    |     |   `-- crttk                   T-Kernel program start-up
+    |     |      |-- src
+    |     |      |   `-- sysdepend              [Hardware dependent portion]
+    |     |      |       `-- &lt;Model Name&gt;
+    |     |      `-- build
+    |     |          `-- &lt;Model Name&gt;
+    |     |-- libsvc                T-Kernel system call I/F library
+    |     |   |-- src
+    |     |   |   `-- sysdepend           [Hardware dependent portion]
+    |     |   |       `-- &lt;CPU Name&gt;
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- libtk                 T-Kernel function call library
+    |     |   |-- src
+    |     |   |   `-- sysdepend           [Hardware dependent portion]
+    |     |   |       `-- &lt;Model Name&gt;
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- libtm                 T-Monitor service call I/F library
+    |     |   |-- src
+    |     |   |   `-- sysdepend           [Hardware dependent portion]
+    |     |   |       `-- &lt;Model Name&gt;
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- libstr                Character string operations library
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- libsys                System operations library
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;Model Name&gt;
+    |     `-- libdrvif              Device drivers operations library
+    |         |-- src
+    |         `-- build
+    |             `-- &lt;Model Name&gt;
+    |
+    |
+    |-- include              Various definition files (header files)
+    |     |-- tk                    T-Kernel related definition files
+    |     |   `-- sysdepend               [Hardware dependent portion]
+    |     |       `-- &lt;Model Name&gt;
+    |     |-- sys                   Definition files for system internal information
+    |     |   |-- sysdepend               [Hardware dependent portion]
+    |     |   |   `-- &lt;Model Name&gt;
+    |     |   `-- svc                     System call/extended SVC definitions
+    |     |-- tm                    T-Monitor related definition files
+    |     `-- device                Device driver related definition files
+    |
+    |
+    |-- config               System configuration information files
+    |     |-- src
+    |     |   `-- sysdepend         [Hardware dependent portion]
+    |     |       `-- &lt;Model Name&gt;
+    |     `-- build
+    |             `-- &lt;Model Name&gt;
+    |
+    |
+    |-- etc                   make rule, various scripts
+    |    `-- sysdepend              [Hardware dependent portion]
+    |       |-- cpu
+    |       |   `-- &lt;CPU Name&gt;
+    |       `-- &lt;Model Name&gt;
+    |
+    |
+    `-- bin                   Execution image file
+          `-- &lt;Model Name&gt;</code></pre>
+<h3 id="kernel-Directory">3. kernel Directory</h3>
+<ul>
+<li><p><strong>sysinit directory [kernel core]</strong></p>
+<p>Includes the source code for the T-Kernel initialization/shutdown processing routines.</p>
+<p>The sysinit module object is created in the build directory.</p></li>
+<li><p><strong>tkernel directory [kernel core]</strong></p>
+<p>Includes the T-Kernel/OS source code.</p>
+<p>The tkernel module object is created in the build directory.</p></li>
+<li><p><strong>sysmgr directory [kernel core]</strong></p>
+<p>This includes the T-Kernel/SM (except for the portions implemented in the library) source code.</p>
+<p>The sysmgr module object is created in the build directory.</p></li>
+<li><p><strong>sysmain directory [application dependent portion]</strong></p>
+<p>This includes the source code for the program which is run as the T-Kernel initial task and the task generating parameters.</p>
+<p>The process which is run as the initial task is dependent on the application, so this portion must be created for each application. A sample program is included which uses the T-Monitor service function to output the result of a simple task operation to the console. Please refer to this sample when creating your own program.</p>
+<p>All of the necessary libraries, the kernel core, and device drivers, etc. are built together and linked in the build directory to create the final overall T-Kernel system execution image file.</p></li>
+<li><p><strong>sysdepend directory [Hardware dependent portion]</strong></p>
+<p>This includes the source code which is hardware dependent and must be modified for porting. There is no build directory.</p>
+<ul>
+<li><p><strong>sysdepend/cpu/&lt;CPU Name&gt; directory</strong></p>
+<p>This includes only the source code which is dependent on the hardware CPU. If the same CPU is used with different hardware, then it does not need to be changed.</p></li>
+<li><p><strong>sysdepend/device/&lt;Model Name&gt; directory</strong></p>
+<p>This includes the source code which is dependent on the target hardware board (except the CPU). If the CPU is the same but the hardware is different (different connections such as the bus or interrupts), then it must be changed.</p></li>
+</ul></li>
+<li><p><strong>extension directory</strong></p>
+<p>This includes the source code which must be changed when implementing the T-Kernel Extension. There is no build directory. This does not need to be changed in a standard system with no Extension.</p>
+<ul>
+<li><p><strong>extension/memory directory</strong></p>
+<p>Includes the T-Kernel memory management related source code.</p>
+<p>In a standard system, it uses the source code which supports only the real memory without using the MMU in the &quot;nommu&quot; subdirectory.</p>
+<p>To change the memory management model as an Extension for tasks such as memory protection, create a subdirectory for the Extension and then add the corresponding source code to use it.</p></li>
+<li><p><strong>extension/startup directory</strong></p>
+<p>This includes the source code to perform startup/shutdown processing for the program (subsystems and device drivers) which configures the Extension.</p>
+<p>In a standard system, it uses the source code which supports the no Extension condition in the &quot;noext&quot; subdirectory.</p>
+<p>To implement the Extension, create a subdirectory for the Extension and then add the corresponding source code to use it.</p></li>
+</ul></li>
+</ul>
+<h3 id="lib-Directory">4. lib Directory</h3>
+<ul>
+<li><p><strong>build/&lt;Model Name&gt; directory</strong></p>
+<p>This is the directory path when linking the libraries in the build directory which holds the object files of all of the libraries.</p>
+<p>The library object file created in the build directory of each library is copied to the main build directory. At that time, the previous object file is backed up in the &quot;!OLD&quot; subdirectory.</p>
+<p>The object files of all of the libraries are created together when &quot;make&quot; is run in the main build directory.</p></li>
+<li><p><strong>crt directory</strong></p>
+<p>This is the start-up routine used when independently linking an application program.</p>
+<p>In a standard system, this routine cannot be used, because T-Kernel and the application program are linked together and use a dedicated start-up routine (kernel/sysdepend/device/&lt;Model Name&gt;/icrt0.S ).</p>
+<ul>
+<li><p><strong>crt/crt0 directory</strong></p>
+<p>This is the C language common start-up routine. The source code is written in assembly and is placed in the &quot;src/sysdepend/&lt;Model Name&gt;&quot; subdirectory as a hardware dependent portion.</p>
+<p>The &quot;crt0.o&quot;, &quot;crtn.o&quot;, &quot;crti.o&quot;, &quot;crt1f.o&quot;, &quot;crt1s.o&quot;, and &quot;crtir.o&quot; object files are created in the build directory. The linker selectively chooses and links the object files it needs.</p></li>
+<li><p><strong>crt/crttk directory</strong></p>
+<p>This is the system program start-up routine for the device drivers and subsystems. The kernel core is directly below the &quot;src&quot; subdirectory, and the &quot;src/sysdepend/&lt;Model Name&gt;&quot; subdirectory is the hardware dependent portion.</p>
+<p>The &quot;crttk.o&quot; object file is created in the build directory.</p></li>
+</ul></li>
+<li><p><strong>libsvc directory</strong></p>
+<p>This is the T-Kernel system call/extended SVC interface library. The interface library is written in assembly and is hardware dependent (CPU dependent).</p>
+<p>The interface library source code is automatically generated by the system call definition header file and is placed in the &quot;src/sysdepend/&lt;CPU Name&gt;&quot; subdirectory.</p>
+<p>The libsvc.a library is created in the build directory.</p></li>
+<li><p><strong>libtk directory</strong></p>
+<p>This is the library implementation portion of the T-Kernel/SM function.</p>
+<p>The kernel core is directly below the &quot;src&quot; subdirectory, and the &quot;src/sysdepend/&lt;Model Name&gt;&quot; subdirectory is the hardware dependent portion.</p>
+<p>The libtk.a library is created in the build directory.</p></li>
+<li><p><strong>libtm directory</strong></p>
+<p>This is the T-Monitor service call interface library. The kernel core is directly below the &quot;src&quot; subdirectory, and the &quot;src/sysdepend/&lt;Model Name&gt;&quot; subdirectory is the hardware dependent portion.</p>
+<p>The libtm.a library is created in the build directory.</p></li>
+<li><p><strong>libstr directory</strong></p>
+<p>This is the source code for the T-Kernel and the standard library function for memory/string operations used in the library. There are no hardware dependent portions.</p>
+<p>The libstr.a library is created in the build directory.</p></li>
+<li><p><strong>libsys directory</strong></p>
+<p>This is the source code for the T-Kernel and the basic library function for bit and queue operations used in the library. There are no hardware dependent portions.</p>
+<p>The libsys.a library is created in the build directory.</p></li>
+<li><p><strong>libdrvif directory</strong></p>
+<p>This is the source code for the interface library to create the T-Kernel device drivers. There are no hardware dependent portions.</p>
+<p>Device drivers can be created by directly using the T-Kernel system call, but it is easier to create them using this library.</p>
+<p>The libdrvif.a library is created in the build directory.</p></li>
+</ul>
+<h3 id="include-Directory">5. include Directory</h3>
+<p>This directory only includes definition files, so no objects are generated.</p>
+<ul>
+<li><p><strong>Directly below the include directory</strong></p>
+<p>Jointly used definition files are placed directly below the include directory. All of the files directly below the include directory are the kernel core.</p></li>
+<li><p><strong>tk directory</strong></p>
+<p>These are T-Kernel related definition files.</p>
+<p>The kernel core is directly below the &quot;tk&quot; directory, and the &quot;tk/sysdepend&quot; subdirectory is the hardware dependent portion. As a general rule, the hardware dependent definition files are included by the kernel core definition files, so they do not need to be directly referenced.</p></li>
+<li><p><strong>sys directory</strong></p>
+<p>These are the definition files related to the T-Kernel system internal information. They are used in system programs such as subsystems and libraries. They are not normally used by application programs.</p>
+<p>The kernel core is directly below the &quot;sys&quot; directory, and the &quot;sys/sysdepend&quot; subdirectory is the hardware dependent portion. As a general rule, the hardware dependent definition files are included by the kernel core definition files, so they do not need to be directly referenced.</p>
+<p>The T-Kernel system call/extended SVC definition files are placed in the &quot;sys/svc&quot; subdirectory. They are used in system programs such as subsystems. They are not normally used by application programs. These definition files are automatically generated at the same time when the source code of the T-Kernel system call/extended SVC interface library (libsvc) is automatically generated.</p></li>
+<li><p><strong>device directory</strong></p>
+<p>These are the device driver related definition files They are all hardware dependent.</p></li>
+<li><p><strong>tm directory</strong></p>
+<p>These are the T-Monitor and debug related definition files. There are no hardware dependent portions.</p></li>
+</ul>
+<h3 id="config-Directory">6. config Directory</h3>
+<p>This directory contains the system configuration information files (rominfo, SYSCONF, DEVCONF) used by T-Kernel.</p>
+<ul>
+<li><p>The source code is placed in the &quot;src/sysdepend/&lt;Model Name&gt;&quot; subdirectory, and it is all hardware dependent. Beware that the source file names for the system configuration information are &quot;SYSCONF&quot; and &quot;DEVCONF&quot;, not &quot;xxxx.c&quot;.</p></li>
+<li><p>The system configuration load image file (rominfo.mot) is created in the build directory. When running a build, use &quot;perl&quot; to automatically convert &quot;SYSCONF&quot; and &quot;DEVCONF&quot; to &quot;sysonf.c&quot;, &quot;devconf.c&quot; and then compile.</p></li>
+</ul>
+<h3 id="etc-Directory">7. etc Directory</h3>
+<p>This directory contains the common commands and script files used to build T-Kernel.</p>
+<ul>
+<li><p>It contains the common portion &quot;makerules&quot; which is included in every Makefile.</p></li>
+<li><p>This directory contains the &quot;perl&quot; script file to automatically generate the T-Kernel system call/extended SVC interface library and definition files.</p></li>
+<li><p>The &quot;sysdepend/&lt;Model Name&gt;&quot; and &quot;sysdepend/cpu/&lt;CPU Name&gt;&quot; subdirectories are hardware dependent.</p></li>
+</ul>
+<h3 id="bin-Directory">8. bin Directory</h3>
+<p>The final execution/load image files and link maps created in the build directories below are placed in the &quot;&lt;Model Name&gt;&quot; subdirectory. At that time, the previous object file is backed up in the &quot;!OLD&quot; subdirectory.</p>
+<pre><code>    kernel/sysmain/build/&lt;Model Name&gt;    T-Kernel main part
+    config/build/&lt;Model Name&gt;            System configuration information
+    monitor/tmmain/build/&lt;Model Name&gt;    T-Monitor main part</code></pre>
+<h3 id="Resources-Used-by-T-Kernel">9. Resources Used by T-Kernel</h3>
+<ul>
+<li><p><strong>kernel object</strong></p>
+<p>T-Kernel uses the following kernel objects.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Type</th>
+<th align="center">ID (Note 1)</th>
+<th align="left">Name</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Task</td>
+<td align="center">1</td>
+<td align="left">INIT</td>
+<td align="left">Initial task</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="center">2</td>
+<td align="left">SYSLOG</td>
+<td align="left">syslog task (Note 2)</td>
+</tr>
+<tr class="odd">
+<td align="left">Message</td>
+<td align="center">1</td>
+<td align="left">SYSLOG</td>
+<td align="left">For syslog receipt (size 6 KB) (Note 2)</td>
+</tr>
+<tr class="even">
+<td align="left">Buffer</td>
+<td align="center">2</td>
+<td align="left">DEvt</td>
+<td align="left">Event notification (size 1KB), can be changed with SYSCONF's TDEvtMbfSz</td>
+</tr>
+<tr class="odd">
+<td align="left">Semaphore</td>
+<td align="center">1</td>
+<td align="left">MemMgr</td>
+<td align="left">Memory message lock control</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="center">2</td>
+<td align="left">DevSync</td>
+<td align="left">Device management synchronization control</td>
+</tr>
+<tr class="odd">
+<td align="left">Event</td>
+<td align="center">1</td>
+<td align="left">DevMgr</td>
+<td align="left">Overall device management lock control</td>
+</tr>
+<tr class="even">
+<td align="left">Flag</td>
+<td align="center">2</td>
+<td align="left">LibTk</td>
+<td align="left">Overall libtk lock control</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>(Note 1) The ID number is dynamically allocated, so it may not match the number above.</li>
+<li>(Note 2) Only used when the Console I/O driver is set to be used (USE_SYSLOG_CONSIO) in the syslog function. It is not used by default.</li>
+</ul></li>
+<li><p><strong>Subsystem</strong></p>
+<p>T-Kernel uses the following subsystems within the system.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="center">Subsystem ID</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">8</td>
+<td align="left">T-Kernel/SM device management</td>
+</tr>
+<tr class="even">
+<td align="center">9</td>
+<td align="left">T-Kernel/SM system management</td>
+</tr>
+<tr class="odd">
+<td align="center">17</td>
+<td align="left">Segment manager</td>
+</tr>
+</tbody>
+</table></li>
+</ul>
+</body>
+</html>

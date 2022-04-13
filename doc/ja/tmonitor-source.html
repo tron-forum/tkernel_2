@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h2 id="t-monitor-tef_em1d-用-ソース構成">T-Monitor (tef_em1d 用) ソース構成</h2>
+<hr />
+<ul>
+<li><a href="#はじめに">1. はじめに</a></li>
+<li><a href="#ディレクトリ構成">2. ディレクトリ構成</a></li>
+<li><a href="#include-ディレクトリ">3. include ディレクトリ</a></li>
+<li><a href="#tmmain-ディレクトリ">4. tmmain ディレクトリ</a></li>
+<li><a href="#cmdsvc-ディレクトリ">5. cmdsvc ディレクトリ</a></li>
+<li><a href="#hwdepend-ディレクトリ">6. hwdepend ディレクトリ</a></li>
+<li><a href="#driver-ディレクトリ">7. driver ディレクトリ</a></li>
+<li><a href="#bin-ディレクトリ">8. bin ディレクトリ</a></li>
+</ul>
+<hr />
+<h3 id="はじめに">1. はじめに</h3>
+<p>ここでは、T-Engine リファレンスボード (tef_em1d) 用の T-Monitor のソースコードの構成に関して説明します。</p>
+<p>T-Monitor の機能仕様に関しては、<a href="http://www.tron.org/ja/">トロンフォーラム</a> から公開されている「T-Monitor 仕様書」を、実装に依存する部分に関しては、 <a href="impl-tef_em1d.txt">「T-Kernel 2.0(tef_em1d)実装仕様書」</a> を参照してください。</p>
+<h3 id="ディレクトリ構成">2. ディレクトリ構成</h3>
+<p>T-Monitor のソースコードは、T-Kernel ソースコードパッケージの中に含まれています。</p>
+<p>T-Monitor ソース全体のディレクトリ構成図を以下に示します。</p>
+<ul>
+<li><p>T-Kernel ソースディレクトリの &quot;include&quot;, &quot;etc&quot;, &quot;bin&quot; は、T-Monitor の構築のために使用します。</p></li>
+<li><p>T-Monitor は、実行対象とするハードウェアに強く依存し、大部分がハードウェア依存となりますので、T-Kernel のディレクトリ構成の基本ルールとは一部異なっています。</p></li>
+<li><p><機種名> は &quot;tef_em1d&quot; となります。</p></li>
+<li><p>一部のディレクトリの中には、&quot;_dmy&quot; という名称のファイルが入っています。このファイルは、アーカイバなどの利用を考慮し、ディレクトリが空になることを避けるためのダミーファイルで展開後は不要です。</p></li>
+</ul>
+<!-- dummy comment line for breaking list -->
+
+<pre><code>  tkernel_source
+    |
+    |-- ...               ( T-Kernel ソースディレクトリ)
+    |-- include                 定義ファイル(ヘッダファイル)
+    |-- etc                     make ルール、各種スクリプト
+    |-- bin                     実行イメージファイル
+    |
+    |-- monitor           T-Monitor ソースディレクトリ
+        |
+        |-- include             定義ファイル(ヘッダファイル)
+        |   `-- arm                    [ハードウェア依存部]
+        |
+        |-- tmmain              全体構築ディレクトリ
+        |   `-- build
+        |       `-- &lt;機種名&gt;
+        |
+        |-- cmdsvc              コマンド/サービスコール処理
+        |   |-- build
+        |   |   `-- &lt;機種名&gt;
+        |   `-- src
+        |       `-- armv6             [ハードウェア(CPU)依存部]
+        |
+        |-- hwdepend            システム依存処理 [ハードウェア依存部]
+        |   `-- &lt;機種名&gt;
+        |       |-- build
+        |       `-- src
+        |
+        |-- driver              デバイスドライバ [ハードウェア依存部]
+        |   |-- flash                 フラッシュ ROM ドライバ
+        |   |   |-- build
+        |   |   |   `-- &lt;機種名&gt;
+        |   |   `-- src
+        |   |
+        |   |-- memdisk               メモリディスクドライバ
+        |   |   |-- build
+        |   |   |   `-- &lt;機種名&gt;
+        |   |   `-- src
+        |   |
+        |   `-- sio                   シリアル入出力ドライバ
+        |       |-- build
+        |       |   `-- &lt;機種名&gt;
+        |       `-- src
+        |
+        `-- bin                 構築結果オブジェクト
+            `-- &lt;機種名&gt;</code></pre>
+<h3 id="include-ディレクトリ">3. include ディレクトリ</h3>
+<p>T-Monitor 固有の定義ファイルです。</p>
+<p>&quot;arm&quot; サブディレクトリはハードウェア依存部となります。</p>
+<h3 id="tmmain-ディレクトリ">4. tmmain ディレクトリ</h3>
+<p>T-Monitor 全体の構築ディレクトリです。</p>
+<p>必要なモジュールの構築を一括して行い、それらをリンクして、T-Monitor の実行イメージファイルを構築します。</p>
+<p>構築した T-Monitor の実行イメージファイルは、&quot;tkernel_source/bin/<機種名>&quot; ディレクトリにコピーされます。</p>
+<h3 id="cmdsvc-ディレクトリ">5. cmdsvc ディレクトリ</h3>
+<p>T-Monitor のコマンドおよびサービスコールの処理を行うソースです。</p>
+<p>&quot;src&quot; サブディレクトリ直下はハードウェアに依存しないソースで、&quot;src/armv6&quot; サブディレクトリはハードウェア(CPUのみ)依存部となります。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;bin/<機種名>&quot; ディレクトリにコピーされます。</p>
+<h3 id="hwdepend-ディレクトリ">6. hwdepend ディレクトリ</h3>
+<p>ハードウェアに依存した、リセット起動、ハードウェア初期化、例外/割り込み、メモリアクセスなどの処理を行うソースです。</p>
+<p>すべてハードウェアに依存するため、&quot;<機種名>&quot; サブディレクトリの下に&quot;src&quot; と &quot;build&quot; サブディレクトリを置く構成としています。</p>
+<p>構築ディレクトリで構築したオブジェクトファイルは、&quot;bin/<機種名>&quot; ディレクトリにコピーされます。</p>
+<h3 id="driver-ディレクトリ">7. driver ディレクトリ</h3>
+<p>T-Monitor で使用する以下のデバイスドライバのソースです。</p>
+<pre><code>    flash ディレクトリ:      フラッシュ ROM ドライバ
+    memdisk ディレクトリ:    メモリディスクドライバ
+    sio ディレクトリ:        シリアル入出力ドライバ</code></pre>
+<p>これらのデバイスドライバは、割り込み禁止状態で動作可能するため、割り込みを使用しない T-Monitor 専用のドライバです。</p>
+<p>各ドライバの構築ディレクトリで構築した各ドライバのオブジェクトファイルは、&quot;bin/<機種名>&quot; ディレクトリにコピーされます。</p>
+<h3 id="bin-ディレクトリ">8. bin ディレクトリ</h3>
+<p>以下の構築ディレクトリで構築した構築結果のオブジェクトファイルが、&quot;<機種名>&quot; のサブディレクトリに置かれます。その際、古いオブジェクトファイルは、&quot;!OLD&quot; の名称のサブディレクトリにバックアップされます。</p>
+<pre><code>    cmdsvc/build/&lt;機種名&gt;
+    hwdepend/&lt;機種名&gt;/build
+    driver/flash/build/&lt;機種名&gt;
+    driver/memdisk/build/&lt;機種名&gt;
+    driver/sio/build/&lt;機種名&gt;</code></pre>
+<p>ここに置かれたオブジェクトファイルは、構築ディレクトリ &quot;tmmain/build/<機種名>&quot; で最終的な T-Monitor の実行イメージを構築する際に使用されます。</p>
+</body>
+</html>

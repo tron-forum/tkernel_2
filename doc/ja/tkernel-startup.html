@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h2 id="t-kernel-2.0-の起動処理">T-Kernel 2.0 の起動処理</h2>
+<hr />
+<ul>
+<li><a href="#はじめに">1. はじめに</a></li>
+<li><a href="#リセットt-monitor-の起動処理">2. リセット/T-Monitor の起動処理</a></li>
+<li><a href="#システムの起動情報">3. システムの起動情報</a></li>
+<li><a href="#t-kernelos-の初期化処理">4. T-Kernel/OS の初期化処理</a></li>
+<li><a href="#初期タスクによる起動処理">5. 初期タスクによる起動処理</a></li>
+</ul>
+<hr />
+<h3 id="はじめに">1. はじめに</h3>
+<p>ここでは、T-Kernel 2.0 の起動処理に関して説明します。</p>
+<p>ハードウェアおよび実装に依存する処理に関しては、各機種ごとの「実装仕様書」を参照してください。。</p>
+<h3 id="リセットt-monitor-の起動処理">2. リセット/T-Monitor の起動処理</h3>
+<p>システムがリセットすると、最初に T-Monitor が起動して以下の処理を実行します。</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) リセット初期化処理</strong></p>
+<ul>
+<li><p>ハードウェアの初期化処理、および例外/割込みベクタなどの初期化処理を行います。具体的な処理は、ハードウェアおよび実装に依存します。</p></li>
+<li><p>ROM 情報( rominfo ) の resetinit のアドレスが正当であれば、resetinit プログラムを実行します。</p></li>
+</ul></li>
+<li><p><strong>(2) T-Kernel プログラムのロード</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li>ハードウェアおよび実装に依存しますが、基本的に以下の処理を実行します。</li>
+</ol>
+<ul>
+<li><p>起動可能なディスクが存在する場合<br /> ディスク上のブートプログラムを RAM 上にロードして実行します。ブートプログラムは、必要な T-Kernel プログラムをディスク上から RAM 上にロードして T-Kernel の起動アドレスにジャンプし、T-Kernel を起動します。</p></li>
+<li><p>起動可能なディスクが存在しない場合<br /> ROM 情報 ( rominfo ) の kernel のアドレスが正当であれば、kernel のアドレスにジャンプして、T-Kernel を起動します。</p></li>
+<li><p>kernel のアドレスが正当でなければ、T-Monitor のコマンド入力待ちに入ります。</p></li>
+</ul></li>
+<li><p><strong>(3) T-Kernel の起動</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>T-Monitor または ブートプログラムから T-Kernel の起動アドレスにジャンプしたときの CPU やハードウェアの状態は実装に依存しますが、原則として、CPU の動作モードは特権モード、割り込みは全て禁止された状態となります。</p></li>
+<li><p>T-Kernel が起動した後は、以下の場合を除いて T-Monitor は使用されません。</p></li>
+</ol>
+<ul>
+<li><p>システムの終了<br /> tm_exit サービスコール</p></li>
+<li><p>異常発生時のモニタ呼び出し<br /> tm_monitor サービスコール</p></li>
+<li><p>デバッグ用のコンソール出力<br /> tm_putstring, tm_putchar サービスコール</p></li>
+<li><p>例外や割込みの発生時<br /> T-Kernel はシステムで定めたベクタテーブルにハンドラのベクタアドレスを設定するだけで、ハンドラの呼び出しは T-Monitor の例外/割込み処理ルーチンが行います。</p></li>
+</ul></li>
+</ol>
+<h3 id="システムの起動情報">3. システムの起動情報</h3>
+<p>T-Kernel が起動される際に、以下の情報がメモリ中に存在する必要があります。</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) ROM 情報</strong> ( rominfo )</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>ROM 上の固定アドレスに配置されるシステムの起動情報です。T-Monitor と T-Kernel の両方で参照します。</p></li>
+<li><p>本情報は、ハードウェアおよび実装に依存します。</p></li>
+</ol></li>
+<li><p><strong>(2) システム共有情報</strong> ( SysCommonInfo )</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>RAM 上の固定アドレスに配置されるシステムに関する共有情報です。システムの起動時に T-Monitor が設定し、T-Kernel の起動時にも一部のデータが設定されます。その後、T-Monitor と T-Kernel の両方により参照されます。</p></li>
+<li><p>本情報は、ハードウェアおよび実装に依存します。</p></li>
+</ol></li>
+</ol>
+<h3 id="t-kernelos-の初期化処理">4. T-Kernel/OS の初期化処理</h3>
+<p>T-Kernel の起動アドレス &quot;_start&quot; に制御が移ると、以下の手順で T-Kernel/OS の初期化処理を実行します。</p>
+<ul>
+<li><p>[ <code>xxxxx</code> ] は、関数が存在するソースプログラムの &quot;kernel/&quot; からの相対パス名を示します。</p></li>
+<li><p>TｰKernel Extension なしのとき、&quot;<code>&lt;EXT_STUP&gt;</code>&quot; と &quot;<code>&lt;EXT_MEM&gt;</code>&quot; はそれぞれ &quot;noext&quot;, &quot;nommu&quot; になります。Extension を使用する場合は、Extension に対応した名称になります。</p></li>
+</ul>
+<!-- dummy comment line for breaking list -->
+
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) _start - C 初期化ルーチン</strong> [ <code>sysdepend/device/&lt;機種名&gt;/icrt0.S</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>レジスタ、キャッシュ、変数領域の初期化などのプログラム実行のための前処理を実行します。</p></li>
+<li><p>ROM からの起動の場合は ROM 起動初期化ルーチン ROM_startup [ <code>sysdepend/device/&lt;機種名&gt;/devinit.c</code> ] を呼び出します。</p></li>
+<li><p>本ルーチンは、ハードウェアおよび実装に依存します。</p></li>
+</ol></li>
+<li><p><strong>(2) main - カーネルのメインルーチン</strong> [ <code>sysinit/src/sysinit_main.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>T-Kernel/OS の起動処理を開始します。本処理では、カーネル初期化処理 ( <code>init_system</code> ) を呼び出した後、カーネルメイン処理 ( <code>t_kernel_main</code> ) を呼び出します。</p></li>
+<li><p>カーネルメイン処理からは復帰しません。</p></li>
+</ol></li>
+<li><p><strong>(3) init_system - カーネル初期化処理</strong> [ <code>sysinit/src/sysstartup.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>カーネルの初期化処理の各ルーチンを以下の手順で呼び出します。この段階では T-Kernel は起動していないので、T-Kernel のシステムコールを使用することはできません。</p></li>
+<li><p>ここで行われる初期化処理は、カーネルメモリ管理の初期化など、T-Kernel/OS が起動するために必要な機能の初期化処理です。</p></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) init_device - デバイスの初期化</strong> [ <code>sysdepend/device/&lt;機種名&gt;/devinit.c</code> ]</p></li>
+<li><p><strong>(b) init_subsystems - サブシステムの初期化</strong> [ <code>extension/startup/&lt;EXT_STUP&gt;/subsystem.c</code> ]</p></li>
+<li><p><strong>(c) init_segmgr - セグメント管理の初期化</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/segmgr.c</code> ]</p></li>
+<li><p><strong>(d) init_memmgr - メモリ管理の初期化</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/memmgr.c</code> ]</p></li>
+<li><p><strong>(e) init_Imalloc - カーネルメモリ管理の初期化</strong> [ <code>sysmgr/src/imalloc.c</code> ]</p></li>
+</ol></li>
+<li><p><strong>(4) t_kernel_main - カーネルメイン処理</strong> [ <code>tkernel/src/tkstart.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>前述の main から init_system に続いて呼び出されます。T-Kernel/OS の各機能の初期化処理が行われ、最後に初期タスクを生成・起動します。初期タスクが生成される段階で、T-Kernel/OS の全ての機能は有効となっています。</p></li>
+<li><p>初期タスクの起動をもって、T-Kernel/OS の起動処理は終了します。</p></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) cpu_initialize - CPU 関連初期化処理</strong> [ <code>sysdepend/cpu/&lt;機種名&gt;/cpu_init.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>カーネル内で使用する例外ハンドラの登録、コプロセッサ関連の設定などの CPU に依存する初期化処理を実行します。</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(b) tkdev_initialize - デバイス関連初期化処理</strong> [ <code>sysdepend/device/&lt;機種名&gt;/tkdev_init.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>各デバイスの割込み禁止など、CPU 以外のハードウェアに依存する初期化処理を実行します。</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(c) 各機能モジュールの初期化</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>機能モジュールの初期化ルーチンを以下の順に実行します。</p>
+<ul>
+<li><strong>task_initialize - タスク機能</strong> [ <code>tkernel/src/task.c</code> ]</li>
+<li><strong>semaphore_initialize - セマフォ機能</strong> [ <code>tkernel/src/semaphore.c</code> ]</li>
+<li><strong>eventflag_initialize - イベントフラグ機能</strong> [ <code>tkernel/src/eventflag.c</code> ]</li>
+<li><strong>mailbox_initialize - メールボックス機能</strong> [ <code>tkernel/src/mailbox.c</code> ]</li>
+<li><strong>messagebuffer_initialize - メッセージバッファ機能</strong> [ <code>tkernel/src/messagebuf.c</code> ]</li>
+<li><strong>rendezvous_initialize - ランデブ機能</strong> [ <code>tkernel/src/rendezvous.c</code> ]</li>
+<li><strong>mutex_initialize - ミューテックス機能</strong> [ <code>tkernel/src/utex.c</code> ]</li>
+<li><strong>memorypool_initialize - 可変長メモリプール機能</strong> [ <code>tkernel/src/mempool.c</code> ]</li>
+<li><strong>fix_memorypool_initialize - 固定長メモリプール機能</strong> [ <code>tkernel/src/mempfix.c</code> ]</li>
+<li><strong>cyclichandler_initialize - 周期ハンドラ機能</strong> [ <code>tkernel/src/time_calls.c</code> ]</li>
+<li><strong>alarmhandler_initialize - アラームハンドラ機能</strong> [ <code>tkernel/src/time_calls.c</code> ]</li>
+<li><strong>subsystem_initialize - サブシステム機能</strong> [ <code>tkernel/src/subsystem.c</code> ]</li>
+<li><strong>resource_group_initialize - リソースグループ管理</strong> [ <code>tkernel/src/subsystem.c</code> ]</li>
+<li><strong>timer_initialize - システムタイマ</strong> [ <code>tkernel/src/timer.c</code> ]</li>
+</ul></li>
+</ol></li>
+<li><p><strong>(d) init_task_startup - 初期タスクの生成/起動</strong> [ <code>tkernel/src/tkstart.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>初期タスクを生成し起動します。</p></li>
+<li></li>
+</ol></li>
+</ol></li>
+</ol>
+<h3 id="初期タスクによる起動処理">5. 初期タスクによる起動処理</h3>
+<p>初期タスク init_task [ <code>sysinit/sysinit_main.c</code> ] は、T-Kernel/SM 等の上位のシステムや T-Kernel Extension の起動処理を以下の手順で実行した後、ユーザが定義した処理に実行を移します。</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) start_system - 上位システムの起動</strong> [ <code>sysinit/src/sysstartup.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>T-Kernel/SM 等の上位のシステム、およびデバイスドライバの起動処理を以下の手順で実行します。本処理をもって T-Kernel の初期化/起動処理は終了します。</p></li>
+<li></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) start_segmgr - セグメント管理の起動</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/segmgr.c</code> ]</p></li>
+<li><p><strong>(b) start_memmgr - メモリ管理の起動</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/memmgr.c</code> ]</p></li>
+<li><p><strong>(c) SystemManager - T-Kernel/SM の起動</strong> [ <code>sysmgr/src/smmain.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>T-Kernel/SM を起動します。以降、T-Kernel/SM の機能が利用できます。</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(d) _InitLibtk - ライブラリ( libtk )の初期化</strong> [ <code>../lib/libtk/src/libinit.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>libtk ライブラリを初期化します。以降、libtk ライブラリ関数を利用できます。</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(e) start_device - デバイスドライバの起動</strong> [ <code>sysdepend/device/&lt;機種名&gt;/devinit.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>デバイスドライバの登録/起動を行います。</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(f) start_subsystem - サブシステムの起動</strong> [ <code>extension/startup/&lt;EXT_STUP&gt;/subsystem.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>サブシステムの登録/起動を行います。T-Kernel Extension を使用する場合には、Extension で使用するサブシステムやデバイスドライバの登録/起動を行います。</p></li>
+<li></li>
+</ol></li>
+</ol></li>
+<li><p><strong>(2) init_task_main - 初期タスクメイン処理</strong> [ <code>sysmain/src/init_task_main.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>以下の手順で、ユーザ定義のアプリケーションの処理を実行します。</p></li>
+<li></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) userinit - ユーザ定義の初期化処理</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>ROM 情報(rominfo) の userinit のアドレスが正当であれば、userinit プログラムを実行します。</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(b) usermain - ユーザ定義の初期タスクメイン処理</strong> [ <code>sysmain/src/usermain.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>ユーザが定義した初期タスクのメイン処理です。この処理を終了すると初期タスクは終了し、T-Kernel の終了処理を実行して、システムをシャットダウンします。</p></li>
+<li></li>
+</ol></li>
+</ol></li>
+</ol>
+</body>
+</html>

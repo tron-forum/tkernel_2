@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h1 id="t-kernel-2.0ソースコード説明書">T-Kernel 2.0 ソースコード説明書</h1>
+<hr />
+<h3 id="更新履歴">&lt; 更新履歴 &gt;</h3>
+<ul>
+<li><a href="Ver2.02.00.txt">Ver 2.02.00</a></li>
+<li><a href="Ver2.01.03.txt">Ver 2.01.03</a></li>
+<li><a href="Ver2.01.02.txt">Ver 2.01.02</a></li>
+<li><a href="Ver2.01.01.txt">Ver 2.01.01</a></li>
+<li><a href="Ver2.01.00.txt">Ver 2.01.00</a></li>
+<li><a href="Ver2.00.01.txt">Ver 2.00.01</a></li>
+</ul>
+<h2 id="はじめに">1. はじめに</h2>
+<p>本ソフトウェアはT-Kernel 2.0 のソースコードです。</p>
+<p>T-Kernel 2.0 のカーネルと、ターゲットボードに依存したソフトウェアのソースコードを含んでいます。</p>
+<ol style="list-style-type: none" class="nonum_list">
+<ul>
+<li><p><strong>T-Kernel 2.0 カーネル</strong></p>
+<p>T-Kernel 2.0 のカーネル本体です。T-Kernel/OS、T-Kernel/SM、T-Kernel/DS を含みます。これらのソースコードは、ターゲット非依存の共通部分とターゲットに依存した機種依存部分にディレクトリ単位で分離されており、別のターゲットへの移植が容易になっています。</p></li>
+<li><p><strong>T-Monitor</strong></p>
+<p>システムの起動や初期化、割込みや例外などの処理を行います。また、デバッグサポート機能も含んでいます。基本的にすべてターゲット依存部分です。</p></li>
+<li><p><strong>デバイスドライバ</strong></p>
+<p>ターゲットに搭載されているデバイスのうち、以下の主要デバイスの T-Kernel 標準仕様に準拠したデバイスドライバです。基本的にすべてターゲット依存部分です。</p>
+<ul>
+<li>時計 ( RTC )</li>
+<li>シリアルコンソール</li>
+<li>タッチパネル、および押しボタンスイッチ</li>
+<li>LCD</li>
+<li>システムディスク ( micro SD 用)</li>
+</ul></li>
+</ul></ol>
+<h2 id="ソースコード構成と起動処理">2. ソースコード構成と起動処理</h2>
+<p>T-Kernel 2.0 のソースコードの構成と起動処理に関して説明します。</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li>2-1. <a href="tkernel-source.html">T-Kernel 2.0 ソース構成</a></li>
+<li>2-2. <a href="tmonitor-source.html">T-Monitor (tef_em1d 用) ソース構成</a></li>
+<li>2-3. <a href="driver-source.html">デバイスドライバ (tef_em1d 用) ソース構成</a></li>
+<li>2-4. <a href="tkernel-startup.html">T-Kernel 2.0 の起動処理</a></li>
+</ol>
+<h2 id="t-kernel-2.0-実装仕様書">3. T-Kernel 2.0 実装仕様書</h2>
+<p>ターゲットとする「T-Engine リファレンスボード (tef_em1d)」の実装依存部分に関して説明します。</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li>3-1. <a href="impl-tef_em1d.txt">T-Kernel 2.0 (tef_em1d) 実装仕様書</a></li>
+</ol>
+<h2 id="開発方法">4. 開発方法</h2>
+<p>T-Kernel 2.0のソフトウェアの開発方法に関しては、トロンフォーラムのWebページから公開されている<a href="https://www.tron.org/download/index.php?route=product/product&path=37_38&product_id=133">T-Kernel 2.02.00 Software Package</a>をご参照ください。このパッケージには開発に必要な各ソフトウェアとその説明が含まれています。ただし、開発環境は公開当時のものであることにご注意ください。</p>
+</body>
+</html>

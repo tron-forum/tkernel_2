@@ -1,0 +1,58 @@
+/*
+	manual.css : css for T-Kernel 2.0 Software Package Manual
+*/
+
+/* Adjust left margin for the no-number list item */
+
+ol.mynum_list > li > p:first-child {
+	text-indent : -1.2em;
+}
+
+ol.nonum_list > li > p:first-child {
+	margin-left : -1.2em;
+}
+
+/* Centering the top-level title */
+
+h1 {
+	text-align: center;
+}
+
+/* left margin for the paragraph after header */
+
+h2 ~ p , h2 ~ pre {
+	margin-left : 1em;
+}
+
+h3 ~ p , h3 ~ pre, h3 ~ dl {
+	margin-left : 1em;
+}
+
+/* Image */
+
+img {
+	margin-left : 4em
+}
+
+/* Table */
+
+table {
+	border: solid 2px #000000;
+	margin-bottom: 1em;
+	border-collapse: collapse;
+}
+
+th, td {
+	border-left: solid 1px #000000;
+	border-top: solid 1px #000000;
+	padding: 0.5em 1em 0.5em 1em;
+}
+
+th {
+	border-bottom: solid 2px #000000;
+}
+
+td:empty {
+	border: none;
+}
+

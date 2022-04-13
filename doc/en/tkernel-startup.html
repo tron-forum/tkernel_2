@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h2 id="T-Kernel-2.0-Startup-Process">T-Kernel 2.0 Startup Process</h2>
+<hr />
+<ul>
+<li><a href="#Introduction">1. Introduction</a></li>
+<li><a href="#Reset-T-Monitor-Startup-Processing">2. Reset/T-Monitor Startup Processing</a></li>
+<li><a href="#System-Startup-Information">3. System Startup Information</a></li>
+<li><a href="#T-Kernel-OS-Initialization-Processing">4. T-Kernel/OS Initialization Processing</a></li>
+<li><a href="#Startup-Processing-by-Initial-Tasks">5. Startup Processing by Initial Tasks</a></li>
+</ul>
+<hr />
+<h3 id="Introduction">1. Introduction</h3>
+<p>This section explains the T-Kernel 2.0 startup processing.</p>
+<p>Please refer to the &quot;Implementation Specifications&quot; for each model regarding hardware and implementation specific processing.</p>
+<h3 id="Reset-T-Monitor-Startup-Processing">2. Reset/T-Monitor Startup Processing</h3>
+<p>When the system resets, T-Monitor will start first and then run the following processes.</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) Reset initialization process</strong></p>
+<ul>
+<li><p>This process performs initialization processes such as hardware initialization and exception/interrupt vectors. The specific processes depend on the hardware and implementation.</p></li>
+<li><p>The resetinit program is run if the resetinit address of the ROM information (rominfo) is valid.</p></li>
+</ul></li>
+<li><p><strong>(2) Loading the T-Kernel program</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li>The processes which are run depend on the hardware and implementation but are basically as follows.</li>
+</ol>
+<ul>
+<li><p>If a bootable disk exists<br />The boot program on the disk is loaded into RAM and executed. The boot program loads the required T-Kernel program from disk into RAM, jumps to the T-Kernel start address and launches T-Kernel.</p></li>
+<li><p>If a bootable disk does not exist<br />If the kernel address of the ROM information (rominfo) is valid, it jumps to the kernel address and launches T-Kernel.</p></li>
+<li><p>If the kernel address is not valid, then it waits for T-Monitor command input.</p></li>
+</ul></li>
+<li><p><strong>(3) Launching T-Kernel</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>The state of the CPU and hardware when jumping from T-Monitor or the boot program to the T-Kernel start address depends on the implementation, but in principle the CPU operates in privileged mode and all interrupts are prohibited.</p></li>
+<li><p>After T-Kernel starts up, T-Monitor is not used except in the following cases.</p></li>
+</ol>
+<ul>
+<li><p>System shutdown<br />tm_exit service call</p></li>
+<li><p>Monitor is called when an abnormality occurs<br />tm_monitor service call</p></li>
+<li><p>Console output for debugging<br />tm_putstring, tm_putchar service call</p></li>
+<li><p>Exception or interrupt occurs<br />T-Kernel just set the handler's vector address in the vector table determined by the system. The T-Monitor exception/interruption processing routines perform the handler calls.</p></li>
+</ul></li>
+</ol>
+<h3 id="System-Startup-Information">3. System Startup Information</h3>
+<p>The following information must exist in memory when T-Kernel is launched.</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) ROM information</strong> ( rominfo )</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>This is the system startup information allocated to a fixed ROM address. This is accessed by both T-Monitor and T-Kernel.</p></li>
+<li><p>This information depends on the hardware and implementation.</p></li>
+</ol></li>
+<li><p><strong>(2) System shared information</strong> ( SysCommonInfo )</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>This is the shared information allocated to a fixed RAM address. This is set by T-Monitor during the system startup, and T-Kernel also sets a portion of the data when it launches. Following that, this information is accessed by both T-Monitor and T-Kernel.</p></li>
+<li><p>This information depends on the hardware and implementation.</p></li>
+</ol></li>
+</ol>
+<h3 id="T-Kernel-OS-Initialization-Processing">4. T-Kernel/OS Initialization Processing</h3>
+<p>When control shifts to the T-Kernel start address &quot;_start&quot;, T-Kernel/OS initialization processing is run with the following procedure.</p>
+<ul>
+<li><p>[ <code>xxxxx</code> ] is the relative path name from the source program's &quot;kernel/&quot; of existing functions.</p></li>
+<li><p>&quot;<code>&lt;EXT_STUP&gt;</code>&quot; and &quot;<code>&lt;EXT_MEM&gt;</code>&quot; are set to &quot;noext&quot; and &quot;nommu&quot; when there is no T-Kernel Extension. When Extension is used, they are set to a name corresponding to the Extension.</p></li>
+</ul>
+<p><!-- dummy comment line for breaking list --></p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) _start - C initialization routine</strong> [ <code>sysdepend/device/&lt;Model Name&gt;/icrt0.S</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>This performs the pre-processing to run programs such as initializing registers, cache, and variable areas.</p></li>
+<li><p>The ROM_startup [ <code>sysdepend/device/&lt;Model Name&gt;/devinit.c</code> ] initialization routine is called when starting from the ROM.</p></li>
+<li><p>This routine depends on the hardware and implementation.</p></li>
+</ol></li>
+<li><p><strong>(2) main - Kernel main routine</strong> [ <code>sysinit/src/sysinit_main.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Starts the T-Kernel/OS launch processing. This process calls the kernel main process ( <code>t_kernel_main</code> ) after calling the kernel initialization process ( <code>init_system</code> ).</p></li>
+<li><p>It does not return from the kernel main process.</p></li>
+</ol></li>
+<li><p><strong>(3) init_system - kernel initialization process</strong> [ <code>sysinit/src/sysstartup.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>This calls each routine of the kernel initialization process with the following procedure. T-Kernel is not running at this stage, so the T-Kernel system call cannot be used.</p></li>
+<li><p>The initialization processes performed here initialize the functions required to launch T-Kernel/OS such as the kernel memory management.</p></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) init_device - device initialization </strong> [ <code>sysdepend/device/&lt;Model Name&gt;/devinit.c</code> ]</p></li>
+<li><p><strong>(b) init_subsystems - subsystem initialization</strong> [ <code>extension/startup/&lt;EXT_STUP&gt;/subsystem.c</code> ]</p></li>
+<li><p><strong>(c) init_segmgr - segment management initialization</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/segmgr.c</code> ]</p></li>
+<li><p><strong>(d) init_memmgr - memory management initialization</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/memmgr.c</code> ]</p></li>
+<li><p><strong>(e) init_Imalloc - kernel management initialization</strong> [ <code>sysmgr/src/imalloc.c</code> ]</p></li>
+</ol></li>
+<li><p><strong>(4) t_kernel_main - Kernel main process</strong> [ <code>tkernel/src/tkstart.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Called after the init_system by the aforementioned main. Each of the T-Kernel/OS functions are initialized. Finally, the initial tasks are generated and it launches. All of the T-Kernel/OS functions are valid when the initial tasks are generated.</p></li>
+<li><p>The T-Kernel/OS startup process shuts down when the initial tasks launch.</p></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) cpu_initialize - CPU related initialization process</strong> [ <code>sysdepend/cpu/&lt;Model Name&gt;/cpu_init.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Runs the initialization processes that depend on the CPU such as registering the exception handler used in the kernel and the coprocessor related settings.</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(b) tkdev_initialize - Device related initialization process</strong> [ <code>sysdepend/device/&lt;Model Name&gt;/tkdev_init.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Runs the initialization processes that depend on non-CPU hardware such as disabling interrupts for each device.</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(c) Initialization of each function module</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Initialization routines for the function modules are run in the following order.</p>
+<ul>
+<li><strong>task_initialize - Task function</strong> [ <code>tkernel/src/task.c</code> ]</li>
+<li><strong>semaphore_initialize - Semaphore function</strong> [ <code>tkernel/src/semaphore.c</code> ]</li>
+<li><strong>eventflag_initialize - Event flag function</strong> [ <code>tkernel/src/eventflag.c</code> ]</li>
+<li><strong>mailbox_initialize - Mailbox function</strong> [ <code>tkernel/src/mailbox.c</code> ]</li>
+<li><strong>messagebuffer_initialize - Message buffer function</strong> [ <code>tkernel/src/messagebuf.c</code> ]</li>
+<li><strong>rendezvous_initialize - Rendezvous function</strong> [ <code>tkernel/src/rendezvous.c</code> ]</li>
+<li><strong>mutex_initialize - Mutex function</strong> [ <code>tkernel/src/utex.c</code> ]</li>
+<li><strong>memorypool_initialize - Variable length memory pool function</strong> [ <code>tkernel/src/mempool.c</code> ]</li>
+<li><strong>fix_memorypool_initialize - Fixed length memory pool function</strong> [ <code>tkernel/src/mempfix.c</code> ]</li>
+<li><strong>cyclichandler_initialize - Periodic handler function</strong> [ <code>tkernel/src/time_calls.c</code> ]</li>
+<li><strong>alarmhandler_initialize - Alarm handler function</strong> [ <code>tkernel/src/time_calls.c</code> ]</li>
+<li><strong>subsystem_initialize - Subsystem function</strong> [ <code>tkernel/src/subsystem.c</code> ]</li>
+<li><strong>resource_group_initialize - Resource group management</strong> [ <code>tkernel/src/subsystem.c</code> ]</li>
+<li><strong>timer_initialize - System timer</strong> [ <code>tkernel/src/timer.c</code> ]</li>
+</ul></li>
+</ol></li>
+<li><p><strong>(d) init_task_startup - Initial task generation/startup</strong> [ <code>tkernel/src/tkstart.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Generate and start initial tasks.</p></li>
+<li></li>
+</ol></li>
+</ol></li>
+</ol>
+<h3 id="Startup-Processing-by-Initial-Tasks">5. Startup Processing by Initial Tasks</h3>
+<p>The initial task init_task [ <code>sysinit/sysinit_main.c</code> ] transfers execution to processes defined by the user after running higher-level systems such as T-Kernel/SM and T-Kernel Extension startup processing in the following procedure.</p>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(1) start_system - Higher-level system start up</strong> [ <code>sysinit/src/sysstartup.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Higher-level systems such as T-Kernel/SM and device driver startup processes are run with the following procedure. The T-Kernel initialization/startup process shuts down with this process.</p></li>
+<li></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) start_segmgr - Segment management startup</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/segmgr.c</code> ]</p></li>
+<li><p><strong>(b) start_memmgr - Memory management startup</strong> [ <code>extension/memory/&lt;EXT_MEM&gt;/memmgr.c</code> ]</p></li>
+<li><p><strong>(c) SystemManager - T-Kernel/SM startup</strong> [ <code>sysmgr/src/smmain.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Starts up the T-Kernel/SM. Following that, the T-Kernel/SM functions can be used.</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(d) _InitLibtk - Library( libtk ) initialization</strong> [ <code>../lib/libtk/src/libinit.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Initialize the libtk library. Following that, the libtk library functions can be used.</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(e) start_device - Device driver startup</strong> [ <code>sysdepend/device/&lt;Model Name&gt;/devinit.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Starts and registers the device drivers.</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(f) start_subsystem - Subsystem start up</strong> [ <code>extension/startup/&lt;EXT_STUP&gt;/subsystem.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Registers and starts the subsystems. When the T-Kernel Extension is in use, this registers and starts the subsystems and device drivers used by the Extension.</p></li>
+<li></li>
+</ol></li>
+</ol></li>
+<li><p><strong>(2) init_task_main - Initial task main process</strong> [ <code>sysmain/src/init_task_main.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>Processing of user-defined applications is executed with the following procedure.</p></li>
+<li></li>
+</ol>
+<ol style="list-style-type: none" class="mynum_list">
+<li><p><strong>(a) userinit - User-defined initialization process</strong></p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>The userinit program is run if the userinit address of the ROM information (rominfo) is valid.</p></li>
+<li></li>
+</ol></li>
+<li><p><strong>(b) usermain - User-defined initial task main process</strong> [ <code>sysmain/src/usermain.c</code> ]</p>
+<ol style="list-style-type: none" class="nonum_list">
+<li><p>This is the main process of a user-defined initial task. Shutting down this process shuts down the initial task, runs the T-Kernel shutdown process, and shuts down the system.</p></li>
+<li></li>
+</ol></li>
+</ol></li>
+</ol>
+</body>
+</html>

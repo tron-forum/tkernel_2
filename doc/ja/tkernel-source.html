@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h2 id="t-kernel-2.0-ソース構成">T-Kernel 2.0 ソース構成</h2>
+<hr />
+<ul>
+<li><a href="#はじめに">1. はじめに</a></li>
+<li><a href="#ディレクトリ構成">2. ディレクトリ構成</a></li>
+<li><a href="#kernel-ディレクトリ">3. kernel ディレクトリ</a></li>
+<li><a href="#lib-ディレクトリ">4. lib ディレクトリ</a></li>
+<li><a href="#include-ディレクトリ">5. include ディレクトリ</a></li>
+<li><a href="#config-ディレクトリ">6. config ディレクトリ</a></li>
+<li><a href="#etc-ディレクトリ">7. etc ディレクトリ</a></li>
+<li><a href="#bin-ディレクトリ">8. bin ディレクトリ</a></li>
+<li><a href="#t-kernel-が使用する資源">9. T-Kernel が使用する資源</a></li>
+</ul>
+<hr />
+<h3 id="はじめに">1. はじめに</h3>
+<p>ここでは、T-Kernel 2.0 のソースコードの構成に関して説明します。</p>
+<p>T-Kernel 2.0 の機能仕様に関しては、<a href="http://www.tron.org/ja/">トロンフォーラム</a> から公開されている「T-Kernel 2.0 仕様書」を、実装に依存する部分に関しては、<a href="impl-tef_em1d.txt">「T-Kernel 2.0(tef_em1d)実装仕様書」</a> を参照してください。</p>
+<p>T-Kernel のディレクトリ構成に関する基本ルールおよび用語を以下に示します。</p>
+<ul>
+<li><p><strong>機種名</strong></p>
+<p>T-Kernel では、動作対象となるハードウェアを以下の形式の <機種名> で表現します。</p>
+<pre><code>&lt;機種名&gt; : &lt;ボード名&gt;_&lt;CPU名&gt;
+           &lt;ボード名&gt; : ボードの種別を示す略称 
+           &lt;CPU名&gt;    : CPU の種別を示す略称</code></pre>
+<p>本パッケージで対象としている <機種名> は以下となります。</p>
+<pre><code>ted_em1d :
+        &lt;ボード名&gt; : tef  - T-Engineリファレンスボード
+        &lt;CPU名&gt;    : em1d - EMMA Mobile 1-D (ARM11コア)</code></pre>
+<p>この <機種名> および &lt;CPU名&gt; をサブディレクトリ名として使用することにより、1 つのディレクトリツリー上で複数の動作対象ハードウェアに対応することが可能となります。</p></li>
+<li><p><strong>ソースディレクトリ</strong></p>
+<p>ソースファイルを置くためのディレクトリで、原則として &quot;src&quot; の名称のディレクトリです。</p></li>
+<li><p><strong>構築ディレクトリ</strong></p>
+<p>機種ごとのオブジェクトファイルを構築するためのディレクトリで、原則として &quot;build/<機種名>&quot; の名称のディレクトリです。</p>
+<p>オブジェクトファイルを構築するには、構築ディレクトリ上で &quot;make&quot; を実行します。</p>
+<p>make のターゲットには以下のものがありますが、通常は、&quot;make&quot; のみで構築できるようになっています。</p>
+<pre><code>    make                make all と同じ
+    make all            通常 make
+    make install        結果を所定ディレクトリにコピー
+    make clean          結果を削除して初期化
+    make source         SVC/拡張SVC I/F ソースの自動生成
+    make clean_source   make source で生成したソースの削除
+    make clean_all      make clean + make clean_source</code></pre>
+<p>構築ディレクトリには、make を実行するための Makefile および 構築結果のオブジェクトファイルが置かれます。</p>
+<p>通常、Makefile では機種に依存しない共通部分を Makefile.common として分離して、include するようにします。Makefile.common はソースディレクトリ(&quot;src/Makefile.common&quot;)、または構築ディレクトリ直下 (&quot;build/Makefile.common&quot;) に置きます。</p></li>
+<li><p><strong>ハードウェア依存部</strong></p>
+<p>動作対象のハードウェアに依存して変更が必要な部分で、&quot;sysdepend/<機種名>&quot; または &quot;sysdepend/&lt;CPU名&gt;&quot; の名称のディレクトリです。後者は CPU のみに依存する場合に使用します。</p>
+<p>ハードウェアに依存する部分を別ディレクトリとして明確に分離することにより、新しいハードウェアへの移植の際に確認/変更が必要なソースコードが限定され、移植が容易になります。</p></li>
+<li><p><strong>アプリケーション依存部</strong></p>
+<p>実際にアプリケーションを開発し、製品等に組み込む場合に変更が必要な部分です。</p>
+<p>アプリケーション依存部は、製品ごとに作成する必要がありますので、本パッケージではサンプルを提供しています。</p></li>
+<li><p><strong>カーネル基本部</strong></p>
+<p>ハードウェアやアプリケーションなどに依存しない、T-Kernel として基本的な機能を提供する部分です。</p>
+<p>T-Kernel の機能を改変するのではない限り、カーネル基本部を変更する必要はありません。</p></li>
+</ul>
+<h3 id="ディレクトリ構成">2. ディレクトリ構成</h3>
+<p>T-Kernel ソース全体のディレクトリ構成図を以下に示します。</p>
+<ul>
+<li><p>本パッケージでは、<機種名> は &quot;tef_em1d&quot;、&lt;CPU名&gt; は &quot;em1d&quot; となります。</p></li>
+<li><p>[ハードウェア依存部] または [アプリケーション依存部] の記述がない部分は、カーネル基本部です。</p></li>
+<li><p>一部のディレクトリの中には、&quot;_dmy&quot; という名称のファイルが入っています。このファイルは、アーカイバなどの利用を考慮し、ディレクトリが空になることを避けるためのダミーファイルで展開後は不要です。</p></li>
+</ul>
+<!-- dummy comment line for breaking list -->
+
+<pre><code>  tkernel_source
+    |
+    |-- kernel               T-Kernel 本体
+    |     |-- sysinit               システム初期化
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- tkernel               T-Kernel/OS
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- sysmgr                T-Kernel/SM
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- sysmain               システムメイン
+    |     |   |-- src                     [アプリケーション依存部]
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- sysdepend             [ハードウェア依存部]
+    |     |   |-- cpu                     CPU依存部
+    |     |   |   `-- &lt;CPU名&gt;
+    |     |   `-- device                  デバイス依存部
+    |     |       `-- &lt;機種名&gt;
+    |     `-- extension             Extension 関連部
+    |         |-- memory                  メモリ管理
+    |         |   `--nommu                     MMUなし
+    |         `-- startup                 Extension 起動/終了処理
+    |             `--noext                     Extension なし
+    |
+    |
+    |-- lib                  ライブラリ
+    |     |-- build                 オブジェクト(構築)ディレクトリ
+    |     |   `-- &lt;機種名&gt;
+    |     |-- crt                   スタートアップルーチン
+    |     |   |-- crt0                    共通スタートアップルーチン
+    |     |   |   |-- src
+    |     |   |   |   `-- sysdepend             [ハードウェア依存部]
+    |     |   |   |       `-- &lt;機種名&gt;
+    |     |   |   `-- build
+    |     |   |       `-- &lt;機種名&gt;
+    |     |   `-- crttk                   T-Kernel プログラムスタートアップ
+    |     |      |-- src
+    |     |      |   `-- sysdepend              [ハードウェア依存部]
+    |     |      |       `-- &lt;機種名&gt;
+    |     |      `-- build
+    |     |          `-- &lt;機種名&gt;
+    |     |-- libsvc                T-Kernel システムコール I/F ライブラリ
+    |     |   |-- src
+    |     |   |   `-- sysdepend           [ハードウェア依存部]
+    |     |   |       `-- &lt;CPU名&gt;
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- libtk                 T-Kernel 関数コールライブラリ
+    |     |   |-- src
+    |     |   |   `-- sysdepend           [ハードウェア依存部]
+    |     |   |       `-- &lt;機種名&gt;
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- libtm                 T-Monitor サービスコール I/F ライブラリ
+    |     |   |-- src
+    |     |   |   `-- sysdepend           [ハードウェア依存部]
+    |     |   |       `-- &lt;機種名&gt;
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- libstr                文字列操作ライブラリ
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     |-- libsys                システム操作ライブラリ
+    |     |   |-- src
+    |     |   `-- build
+    |     |       `-- &lt;機種名&gt;
+    |     `-- libdrvif              デバイスドライバ操作ライブラリ
+    |         |-- src
+    |         `-- build
+    |             `-- &lt;機種名&gt;
+    |
+    |
+    |-- include              各種定義ファイル(ヘッダファイル)
+    |     |-- tk                    T-Kernel 関連の定義ファイル
+    |     |   `-- sysdepend               [ハードウェア依存部]
+    |     |       `-- &lt;機種名&gt;
+    |     |-- sys                   システム内部情報の定義ファイル
+    |     |   |-- sysdepend               [ハードウェア依存部]
+    |     |   |   `-- &lt;機種名&gt;
+    |     |   `-- svc                     システムコール/拡張 SVC 定義
+    |     |-- tm                    T-Monitor 関連の定義ファイル
+    |     `-- device                デバイスドライバ関連の定義ファイル
+    |
+    |
+    |-- config               システム構成情報ファイル
+    |     |-- src
+    |     |   `-- sysdepend         [ハードウェア依存部]
+    |     |       `-- &lt;機種名&gt;
+    |     `-- build
+    |             `-- &lt;機種名&gt;
+    |
+    |
+    |-- etc                   make ルール、各種スクリプト
+    |    `-- sysdepend              [ハードウェア依存部]
+    |       |-- cpu
+    |       |   `-- &lt;CPU名&gt;
+    |       `-- &lt;機種名&gt;
+    |
+    |
+    `-- bin                   実行イメージファイル
+          `-- &lt;機種名&gt;</code></pre>
+<h3 id="kernel-ディレクトリ">3. kernel ディレクトリ</h3>
+<ul>
+<li><p><strong>sysinit ディレクトリ [カーネル基本部]</strong></p>
+<p>T-Kernel の初期化/終了処理ルーチンのソースコードを含みます。</p>
+<p>構築ディレクトリでは、sysinit モジュールオブジェクトを構築します。</p></li>
+<li><p><strong>tkernel ディレクトリ [カーネル基本部]</strong></p>
+<p>T-Kernel/OS のソースコードを含みます。</p>
+<p>構築ディレクトリでは、tkernel モジュールオブジェクトを構築します。</p></li>
+<li><p><strong>sysmgr ディレクトリ [カーネル基本部]</strong></p>
+<p>T-Kernel/SM (ライブラリで実装される部分を除く) のソースコードを 含みます。</p>
+<p>構築ディレクトリでは、sysmgr モジュールオブジェクトを構築します。</p></li>
+<li><p><strong>sysmain ディレクトリ [アプリケーション依存部]</strong></p>
+<p>T-Kernel の初期タスクとして実行するプログラムおよびタスク生成パラメータなどのソースコードを含みます。</p>
+<p>初期タスクとして実行する処理はアプリケーションに依存するため、この部分はアプリケーションごとに作成する必要があります。サンプルとして、簡単なタスク操作を行った結果を T-Monitor のサービス関数を用いてコンソールに出力するプログラムが入っていますので、これを参考にして作成してください。</p>
+<p>構築ディレクトリでは、ライブラリやカーネル基本部、デバイスドライバなどの必要なすべてのモジュールの構築を一括して行い、それらをリンクして、T-Kernel システム全体の最終的な実行イメージファイルを構築します。</p></li>
+<li><p><strong>sysdepend ディレクトリ [ハードウェア依存部]</strong></p>
+<p>動作対象のハードウェアに依存し、移植の際には変更が必要になるソースコードを含みます。構築ディレクトリはありません。</p>
+<ul>
+<li><p><strong>sysdepend/cpu/&lt;CPU名&gt; ディレクトリ</strong></p>
+<p>動作対象のハードウェアの CPU にのみ依存するソースコードを含みます。異なるハードウェアでも 同一 CPU であれば、変更する必要はありません。</p></li>
+<li><p><strong>sysdepend/device/<機種名> ディレクトリ</strong></p>
+<p>動作対象のハードウェアのボード(CPU 以外の部分)に依存するソースコードを含みます。同一 CPU でも異なるハードウェア(バスや割り込みなどの接続が異なる)の場合は、変更する必要があります。</p></li>
+</ul></li>
+<li><p><strong>extension ディレクトリ</strong></p>
+<p>T-Kernel の Extension を実装する際に変更が必要になるソースコードを含みます。構築ディレクトリはありません。Extension なしの標準システムでは変更する必要はありません。</p>
+<ul>
+<li><p><strong>extension/memory ディレクトリ</strong></p>
+<p>T-Kernel のメモリ管理に関するソースコードを含みます。</p>
+<p>標準システムでは サブディレクトリ &quot;nommu&quot; にある、MMU を使用せず実メモリのみに対応したソースコードを使用します。</p>
+<p>Extension として、メモリ保護など、メモリ管理モデルを変更する場合は、Extension に対応したサブディレクトリを作成して、該当するソースコードを置いて使用します。</p></li>
+<li><p><strong>extension/startup ディレクトリ</strong></p>
+<p>Extension を構成するプログラム(サブシステムやデバイスドライバ)の起動/終了処理を行うソースコードを含みます。</p>
+<p>標準システムでは サブディレクトリ &quot;noext&quot; にある、Extension なしに対応したソースコードを使用します。</p>
+<p>Extension を実装する場合は、Extension に対応したサブディレクトリを作成して、該当するソースコードを置いて使用します。</p></li>
+</ul></li>
+</ul>
+<h3 id="lib-ディレクトリ">4. lib ディレクトリ</h3>
+<ul>
+<li><p><strong>build/<機種名> ディレクトリ</strong></p>
+<p>全ライブラリのオブジェクトファイルを保持している構築ディレクトリで、ライブラリをリンクする際に指定するディレクトリパスです。</p>
+<p>各ライブラリごとの構築ディレクトリで構築したライブラリのオブジェクトファイルは、本構築ディレクトリにコピーされます。その際、古いオブジェクトファイルは、&quot;!OLD&quot; の名称のサブディレクトリにバックアップされます。</p>
+<p>また、本構築ディレクトリで make を行うと、全ライブラリのオブジェクトファイルを一括構築します。</p></li>
+<li><p><strong>crt ディレクトリ</strong></p>
+<p>アプリケーションプログラムを独立してリンクする場合に使用するスタートアップルーチンです。</p>
+<p>標準システムでは、T-Kernel 本体とアプリケーションプログラムは一緒にリンクされ、専用のスタートアップルーチン ( kernel/sysdepend/device/<機種名>/icrt0.S ) を使用するため、このスタートアップルーチンは使用しません。</p>
+<ul>
+<li><p><strong>crt/crt0 ディレクトリ</strong></p>
+<p>C 言語の共通のスタートアップルーチンです。ソースコードはアセンブリで記述され、ハードウエア依存部として &quot;src/sysdepend/<機種名>&quot; のサブディレクトリに置かれます。</p>
+<p>構築ディレクトリでは、&quot;crt0.o&quot;, &quot;crtn.o&quot;, &quot;crti.o&quot;, &quot;crt1f.o&quot;, &quot;crt1s.o&quot;, &quot;crtir.o&quot; のオブジェクトファイルを構築します。リンカは、これらのオブジェクトファイルから必要なものを選択的にリンクします。</p></li>
+<li><p><strong>crt/crttk ディレクトリ</strong></p>
+<p>デバイスドライバやサブシステムなどのシステムプログラムのスタートアップルーチンです。&quot;src&quot; サブディレクトリ直下はカーネル基本部で、&quot;src/sysdepend/<機種名>&quot; のサブディレクトリがハードウエア依存部です。</p>
+<p>構築ディレクトリでは、&quot;crttk.o&quot; オブジェクトファイルを構築します。</p></li>
+</ul></li>
+<li><p><strong>libsvc ディレクトリ</strong></p>
+<p>T-Kernel のシステムコール/拡張SVC のインタフェースライブラリです。インタフェースライブラリはアセンブリで記述され、ハードウエア依存部(CPU 依存)となります。</p>
+<p>インタフェースライブラリのソースコードは、システムコールの定義ヘッダファイルから自動生成して &quot;src/sysdepend/&lt;CPU名&gt;&quot; のサブディレクトリに置かれます。</p>
+<p>構築ディレクトリでは、libsvc.a ライブラリを構築します。</p></li>
+<li><p><strong>libtkディレクトリ</strong></p>
+<p>T-Kernel/SM 機能のライブラリ実装部分です。</p>
+<p>&quot;src&quot; サブディレクトリ直下はカーネル基本部で、&quot;src/sysdepend/<機種名>&quot; のサブディレクトリがハードウエア依存部です。</p>
+<p>構築ディレクトリでは、libtk.a ライブラリを構築します。</p></li>
+<li><p><strong>libtmディレクトリ</strong></p>
+<p>T-Monitor のサービスコールのインタフェースライブラリです。&quot;src&quot; サブディレクトリ直下はカーネル基本部で、&quot;src/sysdepend/<機種名>&quot; のサブディレクトリがハードウエア依存部です。</p>
+<p>構築ディレクトリでは、libtm.a ライブラリを構築します。</p></li>
+<li><p><strong>libstrディレクトリ</strong></p>
+<p>T-Kernel およびライブラリ内で使用しているメモリ/文字列操作の標準的なライブラリ関数のソースコードです。ハードウェア依存部はありません。</p>
+<p>構築ディレクトリでは、libstr.a ライブラリを構築します。</p></li>
+<li><p><strong>libsys ディレクトリ</strong></p>
+<p>T-Kernel およびライブラリ内で使用しているビット操作、キュー操作などの基本的なライブラリ関数のソースコードです。ハードウェア依存部はありません。</p>
+<p>構築ディレクトリでは、libsys.a ライブラリを構築します。</p></li>
+<li><p><strong>libdrvif ディレクトリ</strong></p>
+<p>T-Kernel のデバイスドライバを作成するためのインタフェースライブラリのソースコードです。ハードウェア依存部はありません。</p>
+<p>デバイスドライバは、T-Kernel のシステムコールを直接使用して作成できますが、本ライブラリを使用することで、より容易に作成可能となります。</p>
+<p>構築ディレクトリでは、libdrvif.a ライブラリを構築します。</p></li>
+</ul>
+<h3 id="include-ディレクトリ">5. include ディレクトリ</h3>
+<p>本ディレクトリは定義ファイルのみですので、オブジェクトは生成されません。</p>
+<ul>
+<li><p><strong>include ディレクトリ直下</strong></p>
+<p>include ディレクトリ直下には、共通で使用される型定義ファイルが置かれます。include 直下のファイルは、すべてカーネル基本部です。</p></li>
+<li><p><strong>tk ディレクトリ</strong></p>
+<p>T-Kernel 関連の定義ファイルです。</p>
+<p>&quot;tk&quot; ディレクトリ直下はカーネル基本部で、&quot;tk/sysdepend&quot; のサブディレクトリがハードウエア依存部です。原則として、ハードウエア依存部の定義ファイルはカーネル基本部の定義ファイルから include されますので、ハードウェア依存部の定義ファイルを直接参照する必要はありません。</p></li>
+<li><p><strong>sys ディレクトリ</strong></p>
+<p>T-Kernel システム内部の情報に関する定義ファイルです。サブシステムやライブラリなどシステムプログラムの中で使用され、通常アプリケーションプログラムが使用することはありません。</p>
+<p>&quot;sys&quot; ディレクトリ直下はカーネル基本部で、&quot;sys/sysdepend&quot; のサブディレクトリがハードウエア依存部です。原則として、ハードウエア依存部の定義ファイルはカーネル基本部の定義ファイルから include されますので、ハードウェア依存部の定義ファイルを直接参照する必要はありません。</p>
+<p>&quot;sys/svc&quot; サブディレクトリには、T-Kernel のシステムコール/拡張SVCの定義ファイルが置かれます。サブシステムなどシステムプログラムの中で使用され、通常アプリケーションプログラムが使用することはありません。これらの定義ファイルは、T-Kernel のシステムコール/拡張SVC のインタフェースライブラリ(libsvc)のソースコードの自動生成時に、同時に自動的に生成されます。</p></li>
+<li><p><strong>device ディレクトリ</strong></p>
+<p>デバイスドライバ関連の定義ファイルです。すべてハードウェア依存部です。</p></li>
+<li><p><strong>tm ディレクトリ</strong></p>
+<p>T-Monitor およびデバッグ関連の定義ファイルです。ハードウェア依存部はありません。</p></li>
+</ul>
+<h3 id="config-ディレクトリ">6. config ディレクトリ</h3>
+<p>T-Kernel で使用されるシステム構成情報ファイル (rominfo、SYSCONF、DEVCONF) が置かれます。</p>
+<ul>
+<li><p>ソースコードは、&quot;src/sysdepend/<機種名>&quot; のサブディレクトリに置かれ、すべてハードウェア依存部です。システム構成情報のソースファイル名は、&quot;xxxx.c&quot; ではなく、&quot;SYSCONF&quot; および &quot;DEVCONF&quot; ですので注意してください。</p></li>
+<li><p>構築用ディレクトリでは、システム構成のロードイメージファイル (rominfo.mot) を構築します。構築の際には、&quot;perl&quot; を使用して、&quot;SYSCONF&quot; および &quot;DEVCONF&quot; をそれぞれ &quot;sysonf.c&quot;, &quot;devconf.c&quot; に 自動変換してコンパイルします。</p></li>
+</ul>
+<h3 id="etc-ディレクトリ">7. etc ディレクトリ</h3>
+<p>T-Kernel の構築で使用される共通のコマンドやスクリプトファイルが置かれます。</p>
+<ul>
+<li><p>すべての Makefile で include する 基本部分である makerules が置かれます。</p></li>
+<li><p>T-Kernel のシステムコール/拡張 SVC インタフェースライブラリ、および定義ファイルを自動生成するための &quot;perl&quot; スクリプトファイルが置かれます。</p></li>
+<li><p>&quot;sysdepend/<機種名>&quot; および &quot;sysdepend/cpu/&lt;CPU名&gt;&quot; のサブディレクトリがハードウェア依存部です。</p></li>
+</ul>
+<h3 id="bin-ディレクトリ">8. bin ディレクトリ</h3>
+<p>以下の構築ディレクトリで構築した最終的な実行/ロードイメージファイルとリンクマップが、&quot;<機種名>&quot; のサブディレクトリに置かれます。その際、古いオブジェクトファイルは、&quot;!OLD&quot; の名称のサブディレクトリにバックアップされます。</p>
+<pre><code>    kernel/sysmain/build/&lt;機種名&gt;    T-Kernel 本体
+    config/build/&lt;機種名&gt;            システム構成情報
+    monitor/tmmain/build/&lt;機種名&gt;    T-Monitor 本体</code></pre>
+<h3 id="t-kernel-が使用する資源">9. T-Kernel が使用する資源</h3>
+<ul>
+<li><p><strong>カーネルオブジェクト</strong></p>
+<p>T-Kernel では以下のカーネルオブジェクトを使用します。</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">種別</th>
+<th align="center">ID (注1)</th>
+<th align="left">名 称</th>
+<th align="left">説 明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">タスク</td>
+<td align="center">1</td>
+<td align="left">INIT</td>
+<td align="left">初期タスク</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="center">2</td>
+<td align="left">SYSLOG</td>
+<td align="left">syslog タスク (注2)</td>
+</tr>
+<tr class="odd">
+<td align="left">メッセージ</td>
+<td align="center">1</td>
+<td align="left">SYSLOG</td>
+<td align="left">syslog 受信用 (サイズ 6KB) (注2)</td>
+</tr>
+<tr class="even">
+<td align="left">バッファ</td>
+<td align="center">2</td>
+<td align="left">DEvt</td>
+<td align="left">事象通知(サイズ1KB), SYSCONFのTDEvtMbfSzで変更可</td>
+</tr>
+<tr class="odd">
+<td align="left">セマフォ</td>
+<td align="center">1</td>
+<td align="left">MemMgr</td>
+<td align="left">メモリマネージャのロック制御</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="center">2</td>
+<td align="left">DevSync</td>
+<td align="left">デバイス管理同期制御</td>
+</tr>
+<tr class="odd">
+<td align="left">イベント</td>
+<td align="center">1</td>
+<td align="left">DevMgr</td>
+<td align="left">デバイス管理全体のロック制御</td>
+</tr>
+<tr class="even">
+<td align="left">フラグ</td>
+<td align="center">2</td>
+<td align="left">LibTk</td>
+<td align="left">libtk 全体のロック制御</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>(注1) ID 番号は動的に割り付けられますので、上記の ID 番号とはならない場合もあります。</li>
+<li>(注2) syslog 機能で Console I/O ドライバを使用するように設定( USE_SYSLOG_CONSIO )した場合のみ使用され、デフォールトでは使用しません。</li>
+</ul></li>
+<li><p><strong>サブシステム</strong></p>
+<p>T-Kernel ではシステム内で以下のサブシステムを使用します。</p>
+<table>
+<thead>
+<tr class="header">
+<th align="center">サブシステム ID</th>
+<th align="left">説 明</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">8</td>
+<td align="left">T-Kernel/SM デバイス管理</td>
+</tr>
+<tr class="even">
+<td align="center">9</td>
+<td align="left">T-Kernel/SM システム管理</td>
+</tr>
+<tr class="odd">
+<td align="center">17</td>
+<td align="left">セグメントマネージャ</td>
+</tr>
+</tbody>
+</table></li>
+</ul>
+</body>
+</html>

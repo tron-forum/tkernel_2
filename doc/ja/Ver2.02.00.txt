@@ -1,0 +1,139 @@
+============================================================================
+■■■T-Kernel 2.0ソースコードパッケージ Ver 2.02.00 修正箇所     2015/06/17
+
+
+■T-Kernel Ver 2.02.00 修正箇所
+
+本バージョンでは、以下の観点から、ディレクトリ構成やドキュメント構成の変更を
+含めた、全体的に大幅な修正を行っています。
+
+    - 全体の構成を判りやすく整理。
+    - 不要箇所や未使用箇所の削除。
+    - バグや誤植などの修正。
+
+
+----
+■ ソースコードの修正
+
+ ○ 全般的な修正点。
+    - 字句の間違いの訂正。
+    - CONST 宣言の追加。
+    - キャスティングの追加(コンパイル時警告回避)。
+    - bms_printf, BMS_DEBUG_PRINT を tm_printf, TM_DEBUG_PRINT に変更。
+    - Makefile に clean_install の処理を追加。
+    - libstr の修正に伴ない、MEMCPY などの大文字の関数名に変更。
+
+ ○ tkse ディレクトリを削除。
+    - ビット操作、キュー操作の関数は、新規に追加した libsys に移動。
+    - strchr.c, strcasecmp.c, abs.c, div.c, ffs.c, memset_w.c は未使用
+      のため削除。
+
+ ○ drv ディレクトリを削除し、driver ディレクトリに統合。
+    - 全デバイスドライバのビルド用に driver/build ディレクトリを追加。
+
+ ○ config ディレクトリの launch-ramkernel を削除し、src に統合。
+
+ ○ drv や lib/libsvc ディレクトリに分散していた SVC I/F ライブラリの
+    自動生成用の perl スクリプトを、etc/sysdepend/cpu/em1d/* に移動。
+
+ ○ include ディレクトリの主な修正点。
+    - ctype.h は対応していないため削除。
+    - libstr.h:
+        libstr の修正に伴ない、関数名を tkl_xxxxxx に変更。
+        MEMCPY などの大文字の関数名の tkl_memcpy などへの define を追加。
+        tkl_ なしの memcpy などの関数名を使用可能とするための定義を追加。
+           #define use_libstr_memcpy_implicit      1
+           #define use_libstr_func_as_std          0
+    - tkse/ を削除。
+        tcode.h: include/tcode.h に移動。
+        bitop.h: include/sys/bitop.h に移動。
+        stdlib.h, extension/*: 未使用のため削除。
+    - tk/
+        typedef.h: BOOL 型を INT から UINT に変更。
+    - sys/
+        segment.h: PINFO、DiskInfo を削除。
+        ssid.h: SERIAL_SVC/PRI, H8IO_SVC/PRI を追加。
+        util.h: PINFO、CheckSpaceXXX() を削除。
+    - device/
+        em1d512_iic.h: em1d512_iicspi_svc() を追加。
+        kbpd.h: PNT を追加。
+        h8io.h, share.h: 未使用のため削除。
+    - tm/
+        tmonitor.h: tm_vprintf(), tm_vsprintf() を追加。
+
+ ○ monitor ディレクトリの主な修正点。
+    - libstr なしで単独リンク可能とするため、cmdsvc/src/string.c を追加。
+
+ ○ lib ディレクトリの主な修正点。
+    - libsys/ を追加。
+        ビット操作、キュー操作関数: tkse/、kernel/tstdlib から移動
+        syslog.c, logmask.c: 追加。
+    - libstr/
+        関数名を、先頭に tkl_ を付けた tkl_xxxxxx に変更。
+        libstr.h 内の定義により、tkl_ なしの関数名(weak alias)も有効。
+        strtol() は、tkl_strtoul() に変更。
+        bzero(), strncmp() は未使用のため削除。
+        全体的な高速化。
+    - libdrvif/
+        gdrvif.c: バグ修正
+    - libsvc/
+        src/sysdepend/include: 削除 (include/sys/svc/* を使用)。
+        build/em1d/*.pl: etc/sysdepend/cpu/em1d/*.pl に移動。
+    - libtk/
+        bchkspc.c, bchkspc2.c, bchkspc3.c: 未使用のため削除。
+    - libtm/
+        tm_printf.c: tm_vprintf(), tm_vsprintf() を追加。
+
+ ○ kernel ディレクトリの主な修正点。
+    - usermain、usermain_drv ディレクトリを削除し、sysmain/src に移動。
+    - sysmain での Make 実行ですべての Make が行われるように修正。
+    - tstdlib/ を削除。
+        libsys (include/sys/bitop.h) のビット操作関数を使用。
+        tstdlib_bitXXXX() の呼び出しは、すべて BitXXX() 呼び出しに変更。 
+    - klock.c: バグ修正
+    - deviceio.c: 不要な判定処理を削除
+
+ ○ perl の所在を /usr/local/bin/perl から標準の /usr/bin/perl に変更。
+
+
+----
+■ 開発環境の更新
+
+ ○ Cygwin のパッケージを Ver.1.7.7 から Ver.1.7.17 にバージョンアップ。
+
+ ○ Eclipse のプラグインを改善。
+    ・te_vcom の性能改善などの細かな修正。
+
+ ○ gterm を Ver.2.48 から Ver.2.51 にバージョンアップ。
+    ・Eclipse 対応などの細かな修正。
+
+ ○ QEMU に関する修正点。
+    ・不要なデバッグメッセージの削除。
+    ・Linux 版の実行モジュールを追加。
+    ・ディレクトリ構成の整理。
+
+----
+■ 資料の更新
+
+ ○ T-Licenseをバージョン2.0からバージョン2.1に更新
+      TEF000-218-150401.pdf
+
+ ○ 分散していて重複もあり判りにくかった資料を HTML 形式の資料に統合。
+ ○ 判り易くするために図版を追加。
+
+  従来: ReadMe(_en).txt
+        srcpkg/doc/ja/*.txt
+        srcpkg/doc/changelog/ja/Ver*.txt
+        hardware/tef_em1d/doc/ja/target.txt
+        emulator/tef_em1d/readme(_en).txt
+
+  今回: index.html ( doc/ja/* を参照 )
+
+
+----
+■ その他
+
+ ○ srcpkg/bin に入っていた、生成済みバイナリは不要のため削除。
+
+
+============================================================================

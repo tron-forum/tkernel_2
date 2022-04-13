@@ -1,0 +1,237 @@
+#
+# ----------------------------------------------------------------------
+#     T-Kernel 2.0 Software Package
+#
+#     Copyright 2011 by Ken Sakamura.
+#     This software is distributed under the latest version of T-License 2.x.
+# ----------------------------------------------------------------------
+#
+#     Released by T-Engine Forum(http://www.t-engine.org/) at 2011/05/17.
+#     Modified by T-Engine Forum at 2012/05/22.
+#     Modified by T-Engine Forum at 2013/03/02.
+#     Modified by TRON Forum(http://www.tron.org/) at 2015/06/01.
+#
+# ----------------------------------------------------------------------
+#
+
+#
+#	Makefile for gmake
+#	sysmain (common description)
+#
+
+# source file dependencies (generated automatically)
+DEPS = Dependencies
+DEPENDENCIES_OUTPUT := $(DEPS)
+
+MDIR = $(TETYPE)_$(MACHINE)
+
+# ----------------------------------------------------------------------------
+# kernel install path
+KERNEL_INSTALLDIR	= $(BD)/kernel/bin/$(MDIR)
+
+# kernel modules path
+BLD_TKERNEL_PATH	= $(BD)/kernel/tkernel/build/$(MDIR)
+BLD_SYSMGR_PATH		= $(BD)/kernel/sysmgr/build/$(MDIR)
+BLD_SYSINIT_PATH	= $(BD)/kernel/sysinit/build/$(MDIR)
+
+# device driver path
+BLD_DRIVER_PATH		= $(BD)/driver/$(MDIR)/build
+
+# config modules path
+BLD_CONFIG_PATH		= $(BD)/config/build/$(MDIR)
+
+# monitor path
+BLD_MONITOR_PATH	= $(BD)/monitor/tmmain/build/$(MDIR)
+
+# library path
+BLD_LIBS_PATH		= $(BD)/lib/build/$(MDIR)
+
+# ----------------------------------------------------------------------------
+# target objects
+TARGET_RAM	= kernel-ram.sys
+TARGET_ROM	= kernel-rom.rom
+TARGET_RAMCRT0	= icrt0_ram.o
+TARGET_ROMCRT0	= icrt0.o
+
+# emulator targets
+TARGET_EMU	= rom.bin
+TARGET_DBG_EMU	= rom-dbg.bin
+
+S	= ../../src
+
+# common source files
+SRC	+= inittask_main.c
+VPATH	+= $(S)
+HEADER	+= $(S)
+
+# additional source files (cpu-dependent)
+VPATH   += $(BD)/kernel/sysdepend/cpu/$(MACHINE)
+HEADER  += $(BD)/kernel/sysdepend/cpu/$(MACHINE)
+
+# additional source files (device-dependent)
+VPATH   += $(BD)/kernel/sysdepend/device/$(MDIR)
+HEADER  += $(BD)/kernel/sysdepend/device/$(MDIR)
+
+# header file path (kernel settings)
+HEADER  += $(BD)/kernel/tkernel/src
+
+# object files
+OBJ	= $(addsuffix .o, $(basename $(SRC)))
+
+# T-Kernel modules
+K_OBJ	+=	$(BLD_TKERNEL_PATH)/tkernel.o \
+		$(BLD_SYSMGR_PATH)/sysmgr.o \
+		$(BLD_SYSINIT_PATH)/sysinit.o
+
+# gcc standard library
+STDLIB = -lgcc
+
+# additional library
+LDSYSLIBS = -ltk -lsys -ltm -lsvc
+LDLIBS += $(LDUSRLIBS) $(LDSYSLIBS)
+
+# linker options
+LDFLAGS += -static -nostdlib -T $(LINKSCRIPT)
+
+LINKSCRIPT = kernel-ram$(_GCCVER).lnk
+$(TARGET_ROM): LINKSCRIPT = kernel-rom$(_GCCVER).lnk
+
+# compiler options
+CFLAGS += $(CFLAGS_WARNING)
+CPPFLAGS += -DTKERNEL_ONLY
+
+# suppress debug options for the system codes
+# (comment out to debug the whole kernel)
+DBGOPT := mode=
+
+# ----------------------------------------------------------------------------
+ALL  = $(TARGET_RAM) $(TARGET_RAM:%.sys=%.map) $(TARGET_RAM:%.sys=%.mot)
+ALL += $(TARGET_ROM) $(TARGET_ROM:%.rom=%.map) $(TARGET_ROM:%.rom=%.mot)
+ALL += $(TARGET_RAM:%.sys=%.bin)
+EMU  = $(TARGET_EMU) $(TARGET_DBG_EMU)
+REQ_MODULES = libraries tkernel sysmgr sysinit drivers
+
+# make targets
+.PHONY: all emu clean install install_emu
+.PHONY: source clean_source clean_all
+.PHONY: tkernel sysmgr sysinit libraries drivers config monitor 
+.PHONY: clean_libraries clean_drivers clean_config clean_monitor
+
+# default make targets
+all: $(REQ_MODULES) $(TARGET_RAMCRT0) $(TARGET_ROMCRT0)
+	$(MAKE) $(ALL)
+	$(MAKE) install
+
+# make targets for emulator
+emu: all config monitor
+	$(MAKE) $(EMU)
+	$(MAKE) install_emu
+
+# objects for RAM
+$(TARGET_RAM): $(TARGET_RAMCRT0) $(OBJ) $(K_OBJ) $(I_OBJ)
+	$(CC) $(TARGET_ARCH) $(LDFLAGS) $^ $(LDLIBS) $(STDLIB) $(OUTPUT_OPTION)
+
+$(TARGET_RAM:%.sys=%.map): $(TARGET_RAM)
+	$(NM) $(NMFLAGS) $< > $@
+
+$(TARGET_RAM:%.sys=%.mot): $(TARGET_RAM)
+	$(OBJCOPY) $(OUTPUT_SREC) $< $@
+
+$(TARGET_RAM:%.sys=%.bin): $(TARGET_RAM)
+	$(OBJCOPY) -O binary $< $@
+
+# objects for ROM
+$(TARGET_ROM): $(TARGET_ROMCRT0) $(OBJ) $(K_OBJ) $(I_OBJ)
+	$(CC) $(TARGET_ARCH) $(LDFLAGS) $^ $(LDLIBS) $(STDLIB) $(OUTPUT_OPTION)
+
+$(TARGET_ROM:%.rom=%.map): $(TARGET_ROM)
+	$(NM) $(NMFLAGS) $< > $@
+
+$(TARGET_ROM:%.rom=%.mot): $(TARGET_ROM)
+	$(OBJCOPY) $(OUTPUT_SREC) $< $@
+
+# objects for emulator rom images
+EMU_OBJ	= 	$(BLD_MONITOR_PATH)/tmonitor.mot \
+	  	$(BLD_CONFIG_PATH)/rominfo-rom.mot \
+	  	$(TARGET_ROM:%.rom=%.mot)
+
+DBG_EMU_OBJ =	$(BLD_MONITOR_PATH)/tmonitor.mot \
+	  	$(BLD_CONFIG_PATH)/rominfo-ram.mot
+
+$(TARGET_EMU): $(EMU_OBJ)
+	$(BD)/etc/mergesrec $^ > _rom.mot
+	$(OBJCOPY) -I srec -O binary _rom.mot $@
+	$(RM) _rom.mot
+
+$(TARGET_DBG_EMU): $(DBG_EMU_OBJ)
+	$(BD)/etc/mergesrec $^ > _rom-dbg.mot
+	$(OBJCOPY) -I srec -O binary _rom-dbg.mot $@
+	$(RM) _rom-dbg.mot
+
+# required modules
+tkernel:
+	( cd $(BLD_TKERNEL_PATH) ; $(MAKE) $(DBGOPT) )
+
+sysmgr:
+	( cd $(BLD_SYSMGR_PATH) ; $(MAKE) $(DBGOPT) )
+
+sysinit:
+	( cd $(BLD_SYSINIT_PATH) ; $(MAKE) $(DBGOPT) )
+
+libraries:
+	( cd $(BLD_LIBS_PATH) ; $(MAKE) $(DBGOPT) )
+
+clean_libraries:
+	( cd $(BLD_LIBS_PATH) ; $(MAKE) $(DBGOPT) clean )
+
+drivers:
+	( cd $(BLD_DRIVER_PATH) ; $(MAKE) $(DBGOPT) )
+
+clean_drivers:
+	( cd $(BLD_DRIVER_PATH) ; $(MAKE) $(DBGOPT) clean )
+
+config:
+	( cd $(BLD_CONFIG_PATH) ; $(MAKE) $(DBGOPT) )
+
+clean_config:
+	( cd $(BLD_CONFIG_PATH) ; $(MAKE) $(DBGOPT) clean )
+
+monitor:
+	( cd $(BLD_MONITOR_PATH) ; $(MAKE) $(DBGOPT) )
+
+clean_monitor:
+	( cd $(BLD_MONITOR_PATH) ; $(MAKE) $(DBGOPT) clean )
+
+# make source files of svc interface 
+source:
+	( cd $(BLD_LIBS_PATH) ; $(MAKE) $(DBGOPT) source )
+	( cd $(BLD_DRIVER_PATH) ; $(MAKE) $(DBGOPT) source )
+
+# clean source files of svc interface 
+clean_source:
+	( cd $(BLD_LIBS_PATH) ; $(MAKE) $(DBGOPT) clean_source )
+	( cd $(BLD_DRIVER_PATH) ; $(MAKE) $(DBGOPT) clean_source )
+
+# clean all objects
+clean:	clean_libraries clean_drivers
+	( cd $(BLD_TKERNEL_PATH) ; $(MAKE) $(DBGOPT) clean )
+	( cd $(BLD_SYSMGR_PATH) ; $(MAKE) $(DBGOPT) clean )
+	( cd $(BLD_SYSINIT_PATH) ; $(MAKE) $(DBGOPT) clean )
+	$(RM) $(OBJ) $(TARGET_RAMCRT0) $(TARGET_ROMCRT0) $(ALL) $(DEPS)
+	$(RM) $(TARGET_EMU) $(TARGET_DBG_EMU)
+
+# clean all objects and source files of svc interface
+clean_all: clean clean_source
+
+# install kernel target
+install: $(addprefix $(EXE_INSTALLDIR)/, $(ALL))
+
+# install emualtor target
+install_emu: $(addprefix $(EXE_INSTALLDIR)/, $(EMU))
+
+$(addprefix $(EXE_INSTALLDIR)/, $(TARGET)): $(EXE_INSTALLDIR)/%: %
+
+# generate dependencies
+$(DEPS): ; touch $(DEPS)
+-include $(DEPS)
+

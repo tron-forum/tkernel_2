@@ -1,0 +1,52 @@
+#
+# ----------------------------------------------------------------------
+#     T-Kernel 2.0 Software Package
+#
+#     Copyright 2011 by Ken Sakamura.
+#     This software is distributed under the latest version of T-License 2.x.
+# ----------------------------------------------------------------------
+#
+#     Released by T-Engine Forum(http://www.t-engine.org/) at 2011/05/17.
+#     Modified by T-Engine Forum at 2013/02/20.
+#     Modified by TRON Forum(http://www.tron.org/) at 2015/06/01.
+#
+# ----------------------------------------------------------------------
+#
+
+#
+#	Makefile for gmake
+#	crt0 - C startup routine (common description)
+#
+
+# source file dependencies (generated automatically)
+DEPS = Dependencies
+DEPENDENCIES_OUTPUT := $(DEPS)
+
+# ----------------------------------------------------------------------------
+
+# source file path
+S = ../../src
+VPATH = $(S) $(S)/sysdepend/$(TETYPE)_$(MACHINE)
+HEADER += $(S) $(S)/sysdepend/$(TETYPE)_$(MACHINE)
+
+# ----------------------------------------------------------------------------
+
+.PHONY: all clean install clean_install
+
+all: $(TARGET)
+
+install: $(TARGET:%=$(LIB_INSTALLDIR)/%)
+
+clean:
+	$(RM) $(TARGET) $(DEPS)
+
+clean_install:
+	$(RM) $(TARGET:%=$(LIB_INSTALLDIR)/%)
+
+# generate dependencies
+ifdef DEPENDENCIES_OUTPUT
+  $(DEPS): ; touch $(DEPS)
+else
+  $(DEPS): $(SRC) ; $(MAKEDEPS) $@ $?
+endif
+-include $(DEPS)

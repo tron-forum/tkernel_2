@@ -1,0 +1,160 @@
+============================================================================
+"Modifications of T-Kernel 2.0 Source Code Package Ver 2.02.00"
+                                                               June 17, 2015
+
+- Modifications of T-Kernel Ver 2.02.00 -
+
+In this version, major modifications have been made from the following 
+perspective, such as the changes of the configuration directories and 
+documents.
+
+        - The overall configuration has been improved for easy understanding.
+        - Unnecessary parts and unused parts have been deleted.
+        - Bugs, typos, etc. have been fixed.
+
+
+----
+UPDATE OF SOURCE CODE:
+
+  - Overall modifications
+        - Incorrect words and phrases have been corrected.
+        - CONST declarations have been added.
+        - Casts have been added (Warning is avoided at compile time).
+        - bms_printf and BMS_DEBUG_PRINT have been changed to tm_printf 
+          and TM_DEBUG_PRINT.
+        - clean_install target has been added to Makefile.
+        - Along with the modification of libstr, the lowercase function 
+          names have been changed to uppercase function names such as MEMCPY.
+
+  - tkse directory has been deleted.
+        - The functions of bit manipulation and queue operation have been 
+          moved to the newly added libsys.
+        - As strchr.c, strcasecmp.c, abs.c, div.c, ffs.c, and memset_w.c 
+          were unused, they have been deleted.
+
+  - drv directory has been deleted and the files below it have been integrated 
+    into driver directory.
+        - driver/build directory has been added for the build of all device 
+          drivers.
+
+  - launch-ramkernel under config directory has been deleted and integrated 
+    into src.
+
+  - perl scripts for automatic generation of SVC I/F library scattered in drv 
+    and lib/libsvc directories have been moved to etc/sysdepend/cpu/em1d/*.
+
+  - Major modifications of include directory
+        - As ctype.h was not supported, it has been deleted.
+        - libstr.h:
+            Along with the modifications of libstr, the function name has 
+            been changed to tkl_xxxxxx.
+            define has been added for uppercase function names such as 
+            defining MEMCPY to tkl_memcpy.
+            The definition to make available function names such as memcpy 
+            without tkl_ has been added.
+               #define use_libstr_memcpy_implicit      1
+               #define use_libstr_func_as_std          0
+        - tkse/ has been deleted.
+            tcode.h: has been moved to include/tcode.h.
+            bitop.h: has been moved to include/sys/bitop.h.
+            stdlib.h and extension/*: have been deleted since they were unused.
+        - tk/
+            typedef.h: BOOL type has been changed to UINT from INT.
+        - sys/
+            segment.h: PINFO and DiskInfo have been deleted.
+            ssid.h: SERIAL_SVC/PRI and H8IO_SVC/PRI have been added.
+            util.h: PINFO and CheckSpaceXXX() have been deleted.
+        - device/
+            em1d512_iic.h: em1d512_iicspi_svc() has been added.
+            kbpd.h: PNT has been added.
+            h8io.h and  share.h: have been deleted since they were unused.
+        - tm/
+            tmonitor.h: tm_vprintf() and tm_vsprintf() have been added.
+
+  - Major modification of monitor directory
+        - cmdsvc/src/string.c has been added to enable a standalone link 
+          without libstr.
+
+  - Major modifications of lib directory
+        - libsys/ has been added.
+            The functions of bit manipulation and queue operation: have been 
+            moved from tkse/ and kernel/tstdlib.
+            syslog.c and logmask.c: added.
+        - libstr/
+            The function names have been changed to tkl_xxxxxx with tkl_ as 
+            prefix.
+            The function names (weak alias) without tkl_ can be used by the 
+            definition in libstr.h.
+            strtol() has been changed to tkl_strtoul().
+            bzero() and strncmp() have been deleted since they were unused.
+            Overall speed improvement.
+        - libdrvif/
+            gdrvif.c: Bugs have been fixed.
+        - libsvc/
+            src/sysdepend/include: has been deleted 
+                                   (include/sys/svc/* is used instead).
+            build/em1d/*.pl: have been moved to etc/sysdepend/cpu/em1d/*.pl.
+        - libtk/
+            bchkspc.c, bchkspc2.c, and bchkspc3.c: have been deleted since 
+            they were unused.
+        - libtm/
+            tm_printf.c: tm_vprintf() and tm_vsprintf() have been added.
+
+  - Major modifications of kernel directory
+        - The directories, usermain and usermain_drv, have been deleted and 
+          been moved to sysmain/src.
+        - has been modified so that all sub Make executions can be invoked 
+          by Make execution in sysmain.
+        - tstdlib/ has been deleted.
+            The bit manipulation functions of libsys (include/sys/bitop.h) 
+            are used.
+            All the calls of tstdlib_bitXXXX() have been changed to BitXXX() 
+            calls.
+        - klock.c: Bugs have been fixed.
+        - deviceio.c: Unnecessary conditional checks have been deleted.
+
+  - The location of perl has been changed to standard /usr/bin/perl from 
+    /usr/local/bin/perl.
+
+
+----
+UPDATE OF DEVELOPMENT ENVIRONMENT:
+
+  - The package of Cygwin has been upgraded to Ver.1.7.17 from Ver.1.7.7.
+
+  - Eclipse plug-in has been improved.
+        - Minor modifications such as performance improvement of te_vcom
+
+  - gterm has been upgraded to Ver.2.51 from Ver.2.48.
+        - Minor modifications such as Eclipse support
+
+  - Modifications of QEMU
+        - Unnecessary debug messages have been deleted.
+        - The execution module under Linux has been added.
+        - The directory configuration has been improved.
+
+----
+UPDATE OF DOCUMENTS:
+
+  - T-License is updated from Version 2.0 to 2.1. 
+      TEF000-218-150401.pdf
+
+  - The material which was scattered, duplicated, and hard to understand 
+    sometimes has been consolidated into HTML documents.
+  - Figures have been added for easy understanding.
+
+  Before: ReadMe(_en).txt
+          srcpkg/doc/ja/*.txt
+          srcpkg/doc/changelog/ja/Ver*.txt
+          hardware/tef_em1d/doc/ja/target.txt
+          emulator/tef_em1d/readme(_en).txt
+
+  After:  index.html (Refer to doc/ja/*)
+
+
+----
+Other:
+
+  - As the generated binary in srcpkg/bin was unnecessary, it has been deleted.
+                                                                End of Memo
+============================================================================

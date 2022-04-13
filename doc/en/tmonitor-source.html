@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="../manual.css" type="text/css" />
+</head>
+<body>
+<hr />
+<h2 id="T-Monitor-tef_em1d-use-Source-Configuration">T-Monitor (tef_em1d use) Source Configuration</h2>
+<hr />
+<ul>
+<li><a href="#Introduction">1. Introduction</a></li>
+<li><a href="#Directory-Configuration">2. Directory Configuration</a></li>
+<li><a href="#include-Directory">3. include Directory</a></li>
+<li><a href="#tmmain-Directory">4. tmmain Directory</a></li>
+<li><a href="#cmdsvc-Directory">5. cmdsvc Directory</a></li>
+<li><a href="#hwdepend-Directory">6. hwdepend Directory</a></li>
+<li><a href="#driver-Directory">7. driver Directory</a></li>
+<li><a href="#bin-Directory">8. bin Directory</a></li>
+</ul>
+<hr />
+<h3 id="Introduction">1. Introduction</h3>
+<p>This section explains the T-Monitor source code configuration used with the T-Engine reference board (tef_em1d).</p>
+<p>For more information about the T-Monitor functional specifications, please refer to the &quot;T-Monitor Specifications&quot; released by <a href="http://www.tron.org/">TRON Forum</a>, and the <a href="impl-tef_em1d.txt">&quot;T-Kernel 2.0 (tef_em1d) Implementation Specification&quot;</a> for implementation dependencies.</p>
+<h3 id="Directory-Configuration">2. Directory Configuration</h3>
+<p>The T-Monitor source code is included in the T-Kernel source code package.</p>
+<p>The directory configuration diagram for the entire T-Monitor source is described below.</p>
+<ul>
+<li><p>The &quot;include&quot;, &quot;etc&quot;, and &quot;bin&quot; resources in the T-Monitor source directory are used to build T-Monitor.</p></li>
+<li><p>T-Monitor is highly dependent on the hardware that it runs on. Because it is hardware dependent for the most part, one aspect differs from the basic rules of the T-Kernel directory configuration.</p></li>
+<li><p>The &lt;Model Name&gt; is &quot;tef_em1d&quot;.</p></li>
+<li><p>Some directories contain files with the name &quot;_dmy&quot;. These are dummy files that are included for the archiver to avoid having empty directories and are not needed after extraction.</p></li>
+</ul>
+<p><!-- dummy comment line for breaking list --></p>
+<pre><code>  tkernel_source
+    |
+    |-- ...               (T-Kernel source directory)
+    |-- include                 Definition file (header file)
+    |-- etc                     make rule, various scripts
+    |-- bin                     Execution image file
+    |
+    |-- monitor           T-Monitor source directory
+        |
+        |-- include             Definition file (header file)
+        |   `-- arm                    [Hardware dependent portion]
+        |
+        |-- tmmain              Overall build directory
+        |   `-- build
+        |       `-- &lt;Model Name&gt;
+        |
+        |-- cmdsvc              Command/service call process
+        |   |-- build
+        |   |   `-- &lt;Model Name&gt;
+        |   `-- src
+        |       `-- armv6             [Hardware (CPU) dependent portion]
+        |
+        |-- hwdepend            System dependent process [Hardware dependent portion]
+        |   `-- &lt;Model Name&gt;
+        |       |-- build
+        |       `-- src
+        |
+        |-- driver              Device driver [Hardware dependent portion]
+        |   |-- flash                 Flash ROM driver
+        |   |   |-- build
+        |   |   |   `-- &lt;Model Name&gt;
+        |   |   `-- src
+        |   |
+        |   |-- memdisk               Memory disk driver
+        |   |   |-- build
+        |   |   |   `-- &lt;Model Name&gt;
+        |   |   `-- src
+        |   |
+        |   `-- sio                   Serial I/O driver
+        |       |-- build
+        |       |   `-- &lt;Model Name&gt;
+        |       `-- src
+        |
+        `-- bin                 Build result object
+            `-- &lt;Model Name&gt;</code></pre>
+<h3 id="include-Directory">3. include Directory</h3>
+<p>These are T-Monitor specific definition files.</p>
+<p>The &quot;arm&quot; subdirectory is the hardware dependent portion.</p>
+<h3 id="tmmain-Directory">4. tmmain Directory</h3>
+<p>This is the overall T-Monitor build directory.</p>
+<p>Build and link all of the necessary modules together to create the T-Monitor execution image file.</p>
+<p>The T-Monitor execution image file which is built is copied to the &quot;tkernel_source/bin/&lt;Model Name&gt;&quot; directory.</p>
+<h3 id="cmdsvc-Directory">5. cmdsvc Directory</h3>
+<p>This source processes the T-Monitor commands and service calls.</p>
+<p>The area directly below the &quot;src&quot; subdirectory is not hardware dependent, but the &quot;src/armv6&quot; subdirectory is hardware dependent (CPU only).</p>
+<p>The object file created in the build directory is copied to the &quot;bin/&lt;Model Name&gt;&quot; directory.</p>
+<h3 id="hwdepend-Directory">6. hwdepend Directory</h3>
+<p>This source handles hardware dependent processing such as reset start, hardware initialization, exception/interrupt, and memory access.</p>
+<p>The configuration places the &quot;src&quot; and &quot;build&quot; subdirectories under the &quot;&lt;Model Name&gt;&quot; subdirectory, because they are all hardware dependent.</p>
+<p>The object file created in the build directory is copied to the &quot;bin/&lt;Model Name&gt;&quot; directory.</p>
+<h3 id="driver-Directory">7. driver Directory</h3>
+<p>This is the source for the device drivers used by T-Monitor.</p>
+<pre><code>    flash directory:       Flash ROM driver
+    memdisk directory:     Memory disk driver
+    sio directory:         Serial I/O driver</code></pre>
+<p>Because these drivers may be used when interrupts are prohibited, their use is dedicated to T-Monitor, which does not perform interrupts.</p>
+<p>Each driver object file created in its individual build directory is copied to the &quot;bin/&lt;Model Name&gt;&quot; directory.</p>
+<h3 id="bin-Directory">8. bin Directory</h3>
+<p>The build result object files created in the build directories below are copied to the &quot;&lt;Model Name&gt;&quot; directory. At that time, the previous object file is backed up in the &quot;!OLD&quot; subdirectory.</p>
+<pre><code>    cmdsvc/build/&lt;Model Name&gt;
+    hwdepend/&lt;Model Name&gt;/build
+    driver/flash/build/&lt;Model Name&gt;
+    driver/memdisk/build/&lt;Model Name&gt;
+    driver/sio/build/&lt;Model Name&gt;</code></pre>
+<p>The object files placed here are used when building the final T-Monitor execution image in the &quot;tmmain/build/&lt;Model Name&gt;&quot; build directory.</p>
+</body>
+</html>

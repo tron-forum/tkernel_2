@@ -1,0 +1,140 @@
+#
+# ----------------------------------------------------------------------
+#     T-Kernel 2.0 Software Package
+#
+#     Copyright 2011 by Ken Sakamura.
+#     This software is distributed under the latest version of T-License 2.x.
+# ----------------------------------------------------------------------
+#
+#     Released by T-Engine Forum(http://www.t-engine.org/) at 2011/05/17.
+#     Modified by T-Engine Forum at 2013/02/20.
+#     Modified by TRON Forum(http://www.tron.org/) at 2015/06/01.
+#
+# ----------------------------------------------------------------------
+#
+
+#
+#	Makefile for gmake
+#	libsvc - System call interface library (common description)
+#
+
+# library version
+LIB_VERSION = 2
+
+# source file dependencies (generated automatically)
+DEPS = Dependencies
+DEPENDENCIES_OUTPUT := $(DEPS)
+DEPS_SRC = Dependencies_src
+
+# ----------------------------------------------------------------------------
+
+# target files
+TARGET.a  = libsvc.a
+TARGET.so = libsvc.so.$(LIB_VERSION)
+
+# source file path
+S	= ../../src
+I	= $(BD)/include/sys/svc
+IFSRC	= $(S)/sysdepend/$(MACHINE)
+
+VPATH := $(VPATH):$(IFSRC):$(S)
+SRC = $(SRC_TK) $(SRC_SVC)
+HEADER += $(I)
+
+OBJ = $(addsuffix .o, $(basename $(notdir $(SRC))))
+
+# auto generation header/source files
+IFLIB_TK =	tk/syscall.h
+IFLIB_TD =	tk/dbgspt.h
+IFLIB_SVC =	tk/devmgr.h \
+		tk/sysmgr.h \
+		sys/consio.h \
+		sys/segment.h \
+		$(IFLIB_SYSDEP)
+
+HEADER   += $(IFSRC)/include
+CPPFLAGS += -DBKERNEL
+CFLAGS   += $(CFLAGS_WARNING)
+
+# ----------------------------------------------------------------------------
+
+.PHONY: all clean clean_install clean_all install
+
+ifeq ($(LIBTYPE), so)
+  ALL = $(TARGET.so) $(TARGET.so).map
+else
+  ALL = $(TARGET.a)
+endif
+
+all: $(ALL)
+
+# ----------------------------------------------------------------------------
+
+# generate source code dependencies and define SRC_SVC
+#    (included here because $(SRC_SVC) is referred from $(OBJ) as prerequisites)
+$(DEPS_SRC): $(addprefix $(BD)/include/, $(IFLIB_TK) $(IFLIB_TD) $(IFLIB_SVC))
+	$(RM) $@
+	$(BD)/etc/mktksvc -deps $(MACHINE) $(BD)/include/$(IFLIB_TK) >> $@
+	$(BD)/etc/mktdsvc -deps $(MACHINE) $(BD)/include/$(IFLIB_TD) >> $@
+	for iflib_src in $(IFLIB_SVC) ; do \
+	  $(BD)/etc/mkiflib -deps $(MACHINE) $(BD)/include/$$iflib_src >> $@ ; \
+	done
+-include $(DEPS_SRC)
+
+# ----------------------------------------------------------------------------
+
+$(TARGET.a): $(OBJ)
+	$(AR) $(ARFLAGS) $@ $?
+  ifdef RANLIB
+	$(RANLIB) $@
+  endif
+
+$(TARGET.so): $(OBJ)
+	$(LINK.o) $(LDOBJS) $^ $(LOADLIBES) $(LDLIBS) $(OUTPUT_OPTION)
+
+clean:
+	$(RM) *.o $(ALL)
+	$(RM) $(DEPS) $(DEPS_SRC)
+
+clean_install:
+	$(RM) $(addprefix $(LIB_INSTALLDIR)/, $(ALL))
+ifeq ($(LIBTYPE), so)
+	$(RM) $(addprefix $(EXE_INSTALLDIR)/, $(ALL))
+endif
+
+clean_all: clean_install clean clean_source
+	$(RM) $(DEPS) $(DEPS_SRC)
+
+install: $(addprefix $(LIB_INSTALLDIR)/, $(ALL))
+ifeq ($(LIBTYPE), so)
+install: $(addprefix $(EXE_INSTALLDIR)/, $(ALL))
+endif
+
+# ----------------------------------------------------------------------------
+
+# generafe interface library source file
+.PHONY: source clean_source
+
+source: $(SRC_SVC)
+
+$(SRC_SVC): $(addprefix $(BD)/include/, $(IFLIB_TK) $(IFLIB_TD) $(IFLIB_SVC))
+	( cd $(S); $(BD)/etc/mktksvc $(MACHINE) $(BD)/include/$(IFLIB_TK) );
+	( cd $(S); $(BD)/etc/mktdsvc $(MACHINE) $(BD)/include/$(IFLIB_TD) );
+	( cd $(S) ; \
+	for iflib_src in $(IFLIB_SVC) ; do \
+	  $(BD)/etc/mkiflib $(MACHINE) $(BD)/include/$$iflib_src ; \
+	done );
+
+clean_source:
+	( cd $(I) ; $(RM) *.h )
+	( cd $(IFSRC) ; $(RM) *.S )
+
+# ----------------------------------------------------------------------------
+
+# generate dependencies
+ifdef DEPENDENCIES_OUTPUT
+  $(DEPS): ; touch $(DEPS)
+else
+  $(DEPS): $(SRC) ; $(MAKEDEPS) $@ $?
+endif
+-include $(DEPS)

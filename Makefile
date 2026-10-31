@@ -7,7 +7,9 @@
 # QEMU 멀티부트 로더(-kernel)는 32비트 ELF만 적재하므로
 # 초기 부트 단계는 x86_64-elf 툴체인의 32비트 모드(-m32 / elf_i386)로 빌드한다.
 
-CROSS   ?= x86_64-elf-
+# 크로스 툴체인(x86_64-elf-gcc)이 없으면 호스트 gcc/ld로 자동 대체한다.
+# 강제 지정: make CROSS=x86_64-elf-  또는  make CROSS=
+CROSS   ?= $(if $(shell command -v x86_64-elf-gcc 2>/dev/null),x86_64-elf-,)
 CC      := $(CROSS)gcc
 LD      := $(CROSS)ld
 AS      := nasm

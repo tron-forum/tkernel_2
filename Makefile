@@ -23,7 +23,7 @@ ASFLAGS := -f elf64
 LDFLAGS := -m elf_x86_64 -z max-page-size=0x1000 -T linker.ld -nostdlib
 
 KERNEL  := kernel.elf
-OBJS    := boot.o main.o
+OBJS    := boot.o main.o vga.o
 
 .PHONY: all run clean
 
@@ -38,8 +38,11 @@ $(KERNEL): kernel64.elf
 boot.o: boot.asm
 	$(AS) $(ASFLAGS) $< -o $@
 
-main.o: main.c
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+main.o: vga.h
+vga.o: vga.h io.h
 
 run: $(KERNEL)
 	$(QEMU) -kernel $(KERNEL)

@@ -23,7 +23,7 @@ ASFLAGS := -f elf64
 LDFLAGS := -m elf_x86_64 -z max-page-size=0x1000 -T linker.ld -nostdlib
 
 KERNEL  := kernel.elf
-OBJS    := boot.o main.o vga.o
+OBJS    := boot.o isr.o main.o vga.o idt.o pic.o timer.o keyboard.o
 
 .PHONY: all run clean
 
@@ -35,14 +35,18 @@ kernel64.elf: $(OBJS) linker.ld
 $(KERNEL): kernel64.elf
 	$(OBJCOPY) -O elf32-i386 $< $@
 
-boot.o: boot.asm
+%.o: %.asm
 	$(AS) $(ASFLAGS) $< -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-main.o: vga.h
+main.o: vga.h idt.h timer.h keyboard.h
 vga.o: vga.h io.h
+idt.o: idt.h pic.h vga.h
+pic.o: pic.h io.h
+timer.o: timer.h idt.h io.h
+keyboard.o: keyboard.h idt.h io.h
 
 run: $(KERNEL)
 	$(QEMU) -kernel $(KERNEL)

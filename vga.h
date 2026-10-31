@@ -20,6 +20,9 @@ void vga_put_dec(long v);
 void vga_put_udec(unsigned long v);
 void vga_put_hex(unsigned long v);
 
+/* 커서를 움직이지 않고 지정 위치에 문자열을 쓴다 (상태 표시용) */
+void vga_write_at(int row, int col, const char *s, unsigned char attr);
+
 /* 지원 서식: %c %s %d %i %u %x %p %% (l/ll 길이 수식어 허용) */
 void kprintf(const char *fmt, ...);
 

@@ -165,6 +165,14 @@ void vga_put_hex(unsigned long v)
 	vga_update_cursor();
 }
 
+void vga_write_at(int row, int col, const char *s, unsigned char attr)
+{
+	volatile unsigned short *p = VGA_BUFFER + row * VGA_COLS + col;
+
+	while (*s && col++ < VGA_COLS)
+		*p++ = vga_entry(*s++, attr);
+}
+
 void kprintf(const char *fmt, ...)
 {
 	__builtin_va_list ap;
